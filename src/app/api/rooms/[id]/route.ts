@@ -98,7 +98,11 @@ export async function GET(
 
     // 6. レスポンスの整形 (オーナー・共有ユーザーにのみ総数を返す)
     const formattedCharacters = characters.map((char) => {
-      const isOwner = char.user_id === userId || room.created_by === userId;
+      const isCharOwner = char.user_id === userId;
+      const isRoomOwner = room.created_by === userId;
+      const allowOwnerViewStats = room.allow_owner_view_stats !== false;
+      
+      const isOwner = isCharOwner || (isRoomOwner && allowOwnerViewStats);
       const isShared = sharedCharIds.has(char.id);
       
       return {
@@ -115,12 +119,83 @@ export async function GET(
       id: room.id,
       name: room.name,
       createdBy: room.created_by,
+      allowOwnerManageAll: !!room.allow_owner_manage_all,
+      allowOwnerViewStats: room.allow_owner_view_stats !== false, // default true
       characters: formattedCharacters,
       members: formattedMembers
     });
     
   } catch (error: any) {
     console.error('Get room error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+/**
+ * ルーム設定の更新 (名前、権限オプション)
+ */
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: roomId } = await params;
+    let { name, allowOwnerManageAll, allowOwnerViewStats } = await request.json();
+
+    const supabaseSession = await createServerClient();
+    const { data: { user }, error: authError } = await supabaseSession.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const supabase = createAdminClient();
+
+    // 1. ルームの存在とオーナー確認
+    const { data: room, error: roomError } = await supabase
+      .from('rooms')
+      .select('created_by')
+      .eq('id', roomId)
+      .single();
+
+    if (roomError || !room) {
+      return NextResponse.json({ error: 'Room not found' }, { status: 404 });
+    }
+
+    if (room.created_by !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // 2. 更新データの準備
+    const updateData: any = {};
+    if (name !== undefined) {
+      name = name.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim().slice(0, 50);
+      if (name) updateData.name = name;
+    }
+    if (allowOwnerManageAll !== undefined) {
+      updateData.allow_owner_manage_all = !!allowOwnerManageAll;
+    }
+    if (allowOwnerViewStats !== undefined) {
+      updateData.allow_owner_view_stats = !!allowOwnerViewStats;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ error: 'No data to update' }, { status: 400 });
+    }
+
+    // 3. 更新実行
+    const { data: updatedRoom, error: updateError } = await supabase
+      .from('rooms')
+      .update(updateData)
+      .eq('id', roomId)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+
+    return NextResponse.json(updatedRoom);
+  } catch (error: any) {
+    console.error('Update room error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

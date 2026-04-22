@@ -27,6 +27,8 @@ export default function RoomsDashboard() {
   
   const [newName, setNewName] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [allowOwnerManageAll, setAllowOwnerManageAll] = useState(false);
+  const [allowOwnerViewStats, setAllowOwnerViewStats] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
 
   // IDで参加用
@@ -63,7 +65,13 @@ export default function RoomsDashboard() {
       const res = await fetch("/api/rooms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName, password: newPassword, userId: user.id }),
+        body: JSON.stringify({ 
+          name: newName, 
+          password: newPassword, 
+          userId: user.id,
+          allowOwnerManageAll,
+          allowOwnerViewStats
+        }),
       });
       if (!res.ok) throw new Error("作成に失敗しました");
       const room = await res.json();
@@ -146,6 +154,47 @@ export default function RoomsDashboard() {
                 required
                 className="w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800 border-none outline-none focus:ring-2 focus:ring-rose-500 transition-all"
               />
+              
+              <div className="space-y-3 px-1 py-2">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className="relative flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={allowOwnerManageAll}
+                      onChange={(e) => setAllowOwnerManageAll(e.target.checked)}
+                      className="w-5 h-5 rounded-md border-zinc-300 dark:border-zinc-700 text-rose-500 focus:ring-rose-500 bg-zinc-50 dark:bg-zinc-800"
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-zinc-700 dark:text-zinc-200 group-hover:text-rose-500 transition-colors">
+                      部屋主に全キャラの管理権限を付与
+                    </span>
+                    <span className="text-[10px] text-zinc-400">
+                      部屋主が他人のキャラの名前変更や削除を行えるようになります
+                    </span>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className="relative flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={allowOwnerViewStats}
+                      onChange={(e) => setAllowOwnerViewStats(e.target.checked)}
+                      className="w-5 h-5 rounded-md border-zinc-300 dark:border-zinc-700 text-rose-500 focus:ring-rose-500 bg-zinc-50 dark:bg-zinc-800"
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-zinc-700 dark:text-zinc-200 group-hover:text-rose-500 transition-colors">
+                      部屋主に全キャラの統計閲覧を許可
+                    </span>
+                    <span className="text-[10px] text-zinc-400">
+                      部屋主が常に全キャラの投下統計を確認できるようになります
+                    </span>
+                  </div>
+                </label>
+              </div>
+
               <button
                 disabled={isCreating}
                 className="w-full py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2"

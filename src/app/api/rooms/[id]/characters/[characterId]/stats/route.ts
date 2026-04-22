@@ -24,7 +24,7 @@ export async function GET(
     // 1. 権限チェック（キャラクターのオーナー or ルーム作成者のみ）
     const { data: char, error: charError } = await supabase
       .from('characters')
-      .select('user_id, rooms(created_by)')
+      .select('user_id, rooms(created_by, allow_owner_view_stats)')
       .eq('id', characterId)
       .single();
 
@@ -33,17 +33,29 @@ export async function GET(
     }
 
     const roomCreator = (char.rooms as any)?.created_by;
-    if (char.user_id !== userId && roomCreator !== userId) {
-      // オーナーでもルーム作成者でもない場合、個別の閲覧権限をチェック
-      const { data: access } = await supabase
-        .from('character_access')
-        .select('*')
-        .eq('character_id', characterId)
-        .eq('user_id', userId)
-        .maybeSingle();
+    const allowOwnerViewStats = (char.rooms as any)?.allow_owner_view_stats !== false;
 
-      if (!access) {
+    if (char.user_id !== userId) {
+      // 本人でない場合
+      const isRoomCreator = roomCreator === userId;
+      
+      if (isRoomCreator && !allowOwnerViewStats) {
+        // 部屋主だが閲覧設定がオフの場合
         return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+      }
+
+      if (!isRoomCreator) {
+        // 部屋主でもない場合、個別の閲覧権限をチェック
+        const { data: access } = await supabase
+          .from('character_access')
+          .select('*')
+          .eq('character_id', characterId)
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (!access) {
+          return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+        }
       }
     }
 

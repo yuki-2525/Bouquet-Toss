@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Flower, Plus, ArrowRight, GripVertical, CheckCircle2, XCircle, Pencil, Share2, Copy, Check, TrendingUp, ArrowLeft, Users, X } from "lucide-react";
+import { Flower, Plus, ArrowRight, GripVertical, CheckCircle2, XCircle, Pencil, Share2, Copy, Check, TrendingUp, ArrowLeft, Users, X, Loader2, MoreVertical, Trash2, Settings } from "lucide-react";
 import { useUser } from "@/frontend/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -41,6 +41,8 @@ interface RoomData {
   createdBy: string;
   characters: Character[];
   members: { id: string; name: string; avatarUrl: string | null }[];
+  allowOwnerManageAll: boolean;
+  allowOwnerViewStats: boolean;
 }
 
 // ドラッグ可能なキャラクターカードコンポーネント
@@ -49,12 +51,25 @@ function SortableCharacterItem({
   roomId,
   isEditMode,
   router,
+  currentUserId,
+  onEdit,
+  onDelete,
+  roomData,
 }: {
   char: Character;
   roomId: string;
   isEditMode: boolean;
   router: any;
+  currentUserId?: string;
+  onEdit: (char: Character) => void;
+  onDelete: (char: Character) => void;
+  roomData?: RoomData | null;
 }) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const isCharOwner = currentUserId && char.ownerId === currentUserId;
+  const isRoomOwner = currentUserId && roomData?.createdBy === currentUserId;
+  const canManageAll = roomData?.allowOwnerManageAll;
+  const isOwner = isCharOwner || (isRoomOwner && canManageAll);
   const {
     attributes,
     listeners,
@@ -124,21 +139,85 @@ function SortableCharacterItem({
             </h3>
           </div>
 
-          <div className="flex items-center gap-2 text-zinc-400 group-hover:text-rose-500 transition-colors">
-            {char.totalBouquets !== null && (
-              <Link
-                href={`/rooms/${roomId}/characters/${char.id}/stats`}
-                className="p-2 rounded-full hover:bg-rose-50 dark:hover:bg-rose-900/30 text-rose-500 transition-all mr-2"
-                title="キャラの統計を見る"
-                onClick={(e) => e.stopPropagation()} // 親の onClick 発火を防ぐ
-              >
-                <TrendingUp className="w-5 h-5" />
-              </Link>
+          <div className="flex items-center gap-1">
+            {!isEditMode && isOwner && (
+              <div className="relative mr-1">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsMenuOpen(!isMenuOpen);
+                  }}
+                  className={`p-2 rounded-full transition-all ${isMenuOpen ? 'bg-zinc-100 dark:bg-zinc-800 text-rose-500' : 'text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-600'}`}
+                  aria-label="キャラクター設定"
+                >
+                  <MoreVertical className="w-5 h-5" />
+                </button>
+
+                <AnimatePresence>
+                  {isMenuOpen && (
+                    <>
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsMenuOpen(false);
+                        }}
+                      />
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                        className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-zinc-100 dark:border-zinc-800 z-20 overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="p-2 flex flex-col gap-1">
+                          <button
+                            onClick={() => {
+                              onEdit(char);
+                              setIsMenuOpen(false);
+                            }}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-zinc-700 dark:text-zinc-200 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-600 rounded-xl transition-all"
+                          >
+                            <Settings className="w-4 h-4" />
+                            名前を変更
+                          </button>
+                          <button
+                            onClick={() => {
+                              onDelete(char);
+                              setIsMenuOpen(false);
+                            }}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            キャラクターを削除
+                          </button>
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
             )}
-            <span className="text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block">
-              投下画面へ
-            </span>
-            <ArrowRight className="w-5 h-5" />
+
+            <div className="flex items-center gap-2 text-zinc-400 group-hover:text-rose-500 transition-colors">
+              {char.totalBouquets !== null && (
+                <Link
+                  href={`/rooms/${roomId}/characters/${char.id}/stats`}
+                  className="p-2 rounded-full hover:bg-rose-50 dark:hover:bg-rose-900/30 text-rose-500 transition-all mr-2"
+                  title="キャラの統計を見る"
+                  onClick={(e) => e.stopPropagation()} // 親の onClick 発火を防ぐ
+                >
+                  <TrendingUp className="w-5 h-5" />
+                </Link>
+              )}
+              <span className="text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block">
+                投下画面へ
+              </span>
+              <ArrowRight className="w-5 h-5" />
+            </div>
           </div>
         </div>
       )}
@@ -327,15 +406,118 @@ export default function RoomPage() {
     }
   };
 
+  // キャラクター編集・削除関連の状態
+  const [editingCharacter, setEditingCharacter] = useState<Character | null>(null);
+  const [editName, setEditName] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleUpdateCharacter = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCharacter || !editName.trim() || isUpdating) return;
+
+    setIsUpdating(true);
+    try {
+      const res = await fetch(`/api/rooms/${roomId}/characters/${editingCharacter.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editName.trim() }),
+      });
+
+      if (!res.ok) throw new Error("更新に失敗しました");
+      
+      const updatedChar = await res.json();
+      setRoomData(prev => prev ? {
+        ...prev,
+        characters: prev.characters.map(c => c.id === editingCharacter.id ? { ...c, name: updatedChar.name } : c)
+      } : prev);
+      
+      setEditingCharacter(null);
+    } catch (err) {
+      alert("更新に失敗しました");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDeleteCharacter = async (char: Character) => {
+    if (!confirm(`「${char.name}」を削除してもよろしいですか？\nこの操作は取り消せません。`)) return;
+
+    try {
+      const res = await fetch(`/api/rooms/${roomId}/characters/${char.id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error("削除に失敗しました");
+      
+      setRoomData(prev => prev ? {
+        ...prev,
+        characters: prev.characters.filter(c => c.id !== char.id)
+      } : prev);
+    } catch (err) {
+      alert("削除に失敗しました");
+    }
+  };
+
   const [isAdding, setIsAdding] = useState(false);
+  const [isSubmittingCharacter, setIsSubmittingCharacter] = useState(false);
   const [newCharName, setNewCharName] = useState("");
   const [newAvatarUrl1, setNewAvatarUrl1] = useState("");
   const [newAvatarUrl2, setNewAvatarUrl2] = useState("");
 
+  // ルーム設定関連の状態
+  const [isRoomSettingsOpen, setIsRoomSettingsOpen] = useState(false);
+  const [roomEditName, setRoomEditName] = useState("");
+  const [roomAllowManageAll, setRoomAllowManageAll] = useState(false);
+  const [roomAllowViewStats, setRoomAllowViewStats] = useState(true);
+  const [isUpdatingRoom, setIsUpdatingRoom] = useState(false);
+
+  useEffect(() => {
+    if (roomData) {
+      setRoomEditName(roomData.name);
+      setRoomAllowManageAll(roomData.allowOwnerManageAll);
+      setRoomAllowViewStats(roomData.allowOwnerViewStats);
+    }
+  }, [roomData]);
+
+  const handleUpdateRoom = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!roomData || !roomEditName.trim() || isUpdatingRoom) return;
+
+    setIsUpdatingRoom(true);
+    try {
+      const res = await fetch(`/api/rooms/${roomId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: roomEditName.trim(),
+          allowOwnerManageAll: roomAllowManageAll,
+          allowOwnerViewStats: roomAllowViewStats,
+        }),
+      });
+
+      if (!res.ok) throw new Error("更新に失敗しました");
+      
+      const updatedRoom = await res.json();
+      setRoomData(prev => prev ? {
+        ...prev,
+        name: updatedRoom.name,
+        allowOwnerManageAll: updatedRoom.allow_owner_manage_all,
+        allowOwnerViewStats: updatedRoom.allow_owner_view_stats
+      } : prev);
+      
+      setIsRoomSettingsOpen(false);
+    } catch (err) {
+      alert("更新に失敗しました");
+    } finally {
+      setIsUpdatingRoom(false);
+    }
+  };
+
   const handleAddCharacter = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCharName || !currentUserId) return;
+    if (!newCharName || !currentUserId || isSubmittingCharacter) return;
 
+    setIsSubmittingCharacter(true);
     try {
       const res = await fetch(`/api/rooms/${roomId}/characters`, {
         method: "POST",
@@ -362,6 +544,8 @@ export default function RoomPage() {
       setNewAvatarUrl2("");
     } catch (err) {
       alert("追加に失敗しました");
+    } finally {
+      setIsSubmittingCharacter(false);
     }
   };
 
@@ -418,11 +602,25 @@ export default function RoomPage() {
                 {isCopying ? "コピーしました！" : "招待URL（パスワード付き）をコピー"}
               </button>
 
-              {/* 参加メンバー一覧 */}
-              <button 
-                onClick={() => setIsMemberListOpen(true)}
-                className="flex items-center gap-2 mt-2 px-3 py-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors group/members"
-              >
+              <div className="flex items-center gap-4 mt-2">
+                {/* ルーム設定（オーナーのみ） */}
+                {isRoomCreator && (
+                  <button
+                    onClick={() => setIsRoomSettingsOpen(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors group/settings"
+                  >
+                    <Settings className="w-4 h-4 text-zinc-400 group-hover/settings:text-rose-500 transition-colors" />
+                    <span className="text-xs text-zinc-400 font-bold group-hover/settings:text-rose-500 transition-colors">
+                      ルーム設定
+                    </span>
+                  </button>
+                )}
+
+                {/* 参加メンバー一覧 */}
+                <button 
+                  onClick={() => setIsMemberListOpen(true)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors group/members"
+                >
                 <div className="flex -space-x-2 overflow-hidden">
                   {(roomData.members || []).slice(0, 5).map((member) => (
                     <div
@@ -450,7 +648,8 @@ export default function RoomPage() {
                 </span>
               </button>
             </div>
-          )}
+          </div>
+        )}
         </div>
       </div>
 
@@ -567,6 +766,13 @@ export default function RoomPage() {
                     roomId={roomId}
                     isEditMode={true}
                     router={router}
+                    currentUserId={currentUserId}
+                    onEdit={(c) => {
+                      setEditingCharacter(c);
+                      setEditName(c.name);
+                    }}
+                    onDelete={handleDeleteCharacter}
+                    roomData={roomData}
                   />
                 ))}
               </SortableContext>
@@ -579,6 +785,13 @@ export default function RoomPage() {
                 roomId={roomId}
                 isEditMode={false}
                 router={router}
+                currentUserId={currentUserId}
+                onEdit={(c) => {
+                  setEditingCharacter(c);
+                  setEditName(c.name);
+                }}
+                onDelete={handleDeleteCharacter}
+                roomData={roomData}
               />
             ))
           )}
@@ -639,8 +852,10 @@ export default function RoomPage() {
                     </button>
                     <button
                       type="submit"
-                      className="px-6 py-2 rounded-xl text-sm font-bold bg-rose-500 text-white hover:bg-rose-600 transition-colors shadow-md shadow-rose-500/20"
+                      disabled={isSubmittingCharacter}
+                      className="px-6 py-2 rounded-xl text-sm font-bold bg-rose-500 text-white hover:bg-rose-600 transition-colors shadow-md shadow-rose-500/20 disabled:opacity-50 flex items-center gap-2"
                     >
+                      {isSubmittingCharacter ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                       キャラを登録する
                     </button>
                   </div>
@@ -658,6 +873,177 @@ export default function RoomPage() {
           )}
         </div>
       </div>
+
+      {/* 名前編集モーダル */}
+      <AnimatePresence>
+        {editingCharacter && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setEditingCharacter(null)}
+              className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl overflow-hidden"
+            >
+              <form onSubmit={handleUpdateCharacter}>
+                <div className="p-6 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center">
+                  <div className="flex items-center gap-2 text-zinc-800 dark:text-zinc-100">
+                    <Settings className="w-5 h-5 text-rose-500" />
+                    <h2 className="text-xl font-bold">キャラクター設定</h2>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={() => setEditingCharacter(null)}
+                    className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                <div className="p-6 space-y-4">
+                  <div className="text-left">
+                    <label className="block text-xs font-bold text-zinc-400 uppercase mb-2 ml-1">キャラの名前</label>
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      required
+                      autoFocus
+                      className="w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800 border-none outline-none focus:ring-2 focus:ring-rose-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-6 bg-zinc-50 dark:bg-zinc-800/30 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setEditingCharacter(null)}
+                    className="flex-1 py-3 rounded-xl font-bold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isUpdating}
+                    className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-rose-500/20"
+                  >
+                    {isUpdating ? <Loader2 className="w-5 h-5 animate-spin" /> : "変更を保存"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ルーム設定モーダル */}
+      <AnimatePresence>
+        {isRoomSettingsOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsRoomSettingsOpen(false)}
+              className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl overflow-hidden"
+            >
+              <form onSubmit={handleUpdateRoom}>
+                <div className="p-6 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center">
+                  <div className="flex items-center gap-2 text-zinc-800 dark:text-zinc-100">
+                    <Settings className="w-5 h-5 text-rose-500" />
+                    <h2 className="text-xl font-bold">ルーム設定</h2>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={() => setIsRoomSettingsOpen(false)}
+                    className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                <div className="p-6 space-y-6">
+                  <div className="text-left">
+                    <label className="block text-xs font-bold text-zinc-400 uppercase mb-2 ml-1">ルーム名</label>
+                    <input
+                      type="text"
+                      value={roomEditName}
+                      onChange={(e) => setRoomEditName(e.target.value)}
+                      required
+                      className="w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800 border-none outline-none focus:ring-2 focus:ring-rose-500 transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-4">
+                    <label className="flex items-start gap-3 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={roomAllowManageAll}
+                        onChange={(e) => setRoomAllowManageAll(e.target.checked)}
+                        className="mt-1 w-5 h-5 rounded-md border-zinc-300 dark:border-zinc-700 text-rose-500 focus:ring-rose-500"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-zinc-700 dark:text-zinc-200 group-hover:text-rose-500 transition-colors">
+                          部屋主に全キャラの管理権限を付与
+                        </span>
+                        <span className="text-[10px] text-zinc-400">
+                          部屋主が他人のキャラの名前変更や削除を行えるようになります
+                        </span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-start gap-3 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={roomAllowViewStats}
+                        onChange={(e) => setRoomAllowViewStats(e.target.checked)}
+                        className="mt-1 w-5 h-5 rounded-md border-zinc-300 dark:border-zinc-700 text-rose-500 focus:ring-rose-500"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-zinc-700 dark:text-zinc-200 group-hover:text-rose-500 transition-colors">
+                          部屋主に全キャラの統計閲覧を許可
+                        </span>
+                        <span className="text-[10px] text-zinc-400">
+                          部屋主が常に全キャラの投下統計を確認できるようになります
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="p-6 bg-zinc-50 dark:bg-zinc-800/30 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsRoomSettingsOpen(false)}
+                    className="flex-1 py-3 rounded-xl font-bold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isUpdatingRoom}
+                    className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-rose-500/20"
+                  >
+                    {isUpdatingRoom ? <Loader2 className="w-5 h-5 animate-spin" /> : "設定を保存"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }

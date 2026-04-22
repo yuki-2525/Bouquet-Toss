@@ -67,7 +67,7 @@ export async function GET(request: Request) {
  */
 export async function POST(request: Request) {
   try {
-    let { name, password } = await request.json();
+    let { name, password, allowOwnerManageAll, allowOwnerViewStats } = await request.json();
 
     const clientIp = request.headers.get('x-forwarded-for') || 'unknown';
     if (!checkRateLimit(`create_room_${clientIp}`, 5, 60000)) {
@@ -108,7 +108,9 @@ export async function POST(request: Request) {
       .insert({
         name,
         password_hash: passwordHash,
-        created_by: userId
+        created_by: userId,
+        allow_owner_manage_all: !!allowOwnerManageAll,
+        allow_owner_view_stats: allowOwnerViewStats !== undefined ? !!allowOwnerViewStats : true
       })
       .select()
       .single();

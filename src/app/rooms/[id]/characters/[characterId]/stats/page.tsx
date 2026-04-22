@@ -29,6 +29,8 @@ interface ShareableUser {
   name: string;
   avatarUrl: string | null;
   hasAccess: boolean;
+  isFixed?: boolean;
+  isRoomOwner?: boolean;
 }
 
 export default function CharacterStatsPage() {
@@ -169,6 +171,9 @@ export default function CharacterStatsPage() {
 
   const toggleAccess = async (targetUserId: string, currentHasAccess: boolean) => {
     if (!user) return;
+    const target = shareableUsers.find(u => u.id === targetUserId);
+    if (target?.isFixed) return;
+    
     setIsUpdatingAccess(targetUserId);
 
     try {
@@ -371,7 +376,7 @@ export default function CharacterStatsPage() {
                     <button
                       key={u.id}
                       onClick={() => toggleAccess(u.id, u.hasAccess)}
-                      disabled={isUpdatingAccess === u.id}
+                      disabled={isUpdatingAccess === u.id || u.isFixed}
                       className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
                         u.hasAccess 
                           ? "bg-rose-50 dark:bg-rose-900/10 border-rose-200 dark:border-rose-900/30 text-rose-700 dark:text-rose-400 shadow-sm" 
@@ -387,11 +392,12 @@ export default function CharacterStatsPage() {
                           )}
                         </div>
                         <span className="text-sm font-bold truncate max-w-[120px]">{u.name}</span>
+                        {u.isRoomOwner && <span className="text-[10px] bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-400 font-bold uppercase tracking-wider">Room Owner</span>}
                       </div>
                       {isUpdatingAccess === u.id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
-                        <div className={`w-10 h-6 rounded-full relative transition-colors ${u.hasAccess ? "bg-rose-500" : "bg-zinc-300 dark:bg-zinc-700"}`}>
+                        <div className={`w-10 h-6 rounded-full relative transition-colors ${u.hasAccess ? "bg-rose-500" : "bg-zinc-300 dark:bg-zinc-700"} ${u.isFixed ? "opacity-50 cursor-not-allowed" : ""}`}>
                           <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${u.hasAccess ? "left-5" : "left-1"}`} />
                         </div>
                       )}

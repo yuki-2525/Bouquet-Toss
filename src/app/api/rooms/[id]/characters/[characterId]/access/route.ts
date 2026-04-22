@@ -49,13 +49,25 @@ export async function GET(
 
     const authSet = new Set(authorizedUsers.map(a => a.user_id));
 
+    // ルーム情報を取得（閲覧設定確認用）
+    const { data: room } = await supabase
+      .from('rooms')
+      .select('created_by, allow_owner_view_stats')
+      .eq('id', roomId)
+      .single();
+
+    const roomOwnerId = room?.created_by;
+    const isFixedByRoom = room?.allow_owner_view_stats !== false;
+
     // 整形して返す（自分自身は除外）
     const result = roomMembers
       .map((m: any) => ({
         id: m.users.id,
         name: m.users.display_name,
         avatarUrl: m.users.avatar_url,
-        hasAccess: authSet.has(m.users.id)
+        hasAccess: authSet.has(m.users.id) || (m.users.id === roomOwnerId && isFixedByRoom),
+        isFixed: m.users.id === roomOwnerId && isFixedByRoom,
+        isRoomOwner: m.users.id === roomOwnerId
       }))
       .filter(m => m.id !== userId);
 
@@ -102,19 +114,18 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    // 付与対象のユーザーがルームに参加しているかチェック (嫌がらせ/ゴミデータ防止)
-    if (hasAccess) {
-      const { data: charData } = await supabase.from('characters').select('room_id').eq('id', characterId).single();
-      const { data: memberCheck } = await supabase
-        .from('room_access')
-        .select('*')
-        .eq('room_id', charData?.room_id)
-        .eq('user_id', targetUserId)
-        .maybeSingle();
+    // ルームの閲覧設定をチェック
+    const { data: charData } = await supabase
+      .from('characters')
+      .select('room_id, rooms(created_by, allow_owner_view_stats)')
+      .eq('id', characterId)
+      .single();
 
-      if (!memberCheck) {
-        return NextResponse.json({ error: 'Target user is not a member of this room' }, { status: 400 });
-      }
+    const roomOwnerId = (charData?.rooms as any)?.created_by;
+    const isFixedByRoom = (charData?.rooms as any)?.allow_owner_view_stats !== false;
+
+    if (!hasAccess && targetUserId === roomOwnerId && isFixedByRoom) {
+      return NextResponse.json({ error: 'Cannot remove room owner access while room setting is enabled' }, { status: 400 });
     }
 
     if (hasAccess) {

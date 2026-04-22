@@ -45,14 +45,18 @@ export async function PATCH(
 
     const adminSupabase = createAdminClient();
 
-    // オーナーチェック
+    // 権限チェック（オーナー or 部屋主の管理権限）
     const { data: character } = await adminSupabase
       .from('characters')
-      .select('user_id')
+      .select('user_id, rooms(created_by, allow_owner_manage_all)')
       .eq('id', characterId)
       .single();
 
-    if (!character || character.user_id !== user.id) {
+    const isCharOwner = character?.user_id === user.id;
+    const isRoomOwner = (character?.rooms as any)?.created_by === user.id;
+    const canManageAll = (character?.rooms as any)?.allow_owner_manage_all === true;
+
+    if (!isCharOwner && !(isRoomOwner && canManageAll)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -97,14 +101,18 @@ export async function DELETE(
 
     const adminSupabase = createAdminClient();
 
-    // オーナーチェック
+    // 権限チェック（オーナー or 部屋主の管理権限）
     const { data: character } = await adminSupabase
       .from('characters')
-      .select('user_id')
+      .select('user_id, rooms(created_by, allow_owner_manage_all)')
       .eq('id', characterId)
       .single();
 
-    if (!character || character.user_id !== user.id) {
+    const isCharOwner = character?.user_id === user.id;
+    const isRoomOwner = (character?.rooms as any)?.created_by === user.id;
+    const canManageAll = (character?.rooms as any)?.allow_owner_manage_all === true;
+
+    if (!isCharOwner && !(isRoomOwner && canManageAll)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

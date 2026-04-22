@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS public.rooms (
   name TEXT NOT NULL,
   password_hash TEXT NOT NULL,
   created_by UUID REFERENCES public.users(id),
+  allow_owner_manage_all BOOLEAN DEFAULT false,
+  allow_owner_view_stats BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
