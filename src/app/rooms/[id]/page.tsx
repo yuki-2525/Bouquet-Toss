@@ -329,7 +329,8 @@ export default function RoomPage() {
 
   const [isAdding, setIsAdding] = useState(false);
   const [newCharName, setNewCharName] = useState("");
-  const [newAvatarUrl, setNewAvatarUrl] = useState("");
+  const [newAvatarUrl1, setNewAvatarUrl1] = useState("");
+  const [newAvatarUrl2, setNewAvatarUrl2] = useState("");
 
   const handleAddCharacter = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -341,7 +342,7 @@ export default function RoomPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: newCharName,
-          avatarUrl: newAvatarUrl || null,
+          avatarUrl: [newAvatarUrl1, newAvatarUrl2].filter(Boolean).join(',') || null,
           roomId,
           userId: currentUserId,
         }),
@@ -357,7 +358,8 @@ export default function RoomPage() {
       
       setIsAdding(false);
       setNewCharName("");
-      setNewAvatarUrl("");
+      setNewAvatarUrl1("");
+      setNewAvatarUrl2("");
     } catch (err) {
       alert("追加に失敗しました");
     }
@@ -599,15 +601,27 @@ export default function RoomPage() {
                         className="w-full px-4 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800 border-none outline-none focus:ring-2 focus:ring-rose-500"
                       />
                     </div>
-                    <div className="text-left">
-                      <label className="block text-xs font-bold text-zinc-400 uppercase mb-1 ml-1">画像URL (任意)</label>
-                      <input
-                        type="url"
-                        placeholder="https://example.com/avatar.png"
-                        value={newAvatarUrl}
-                        onChange={(e) => setNewAvatarUrl(e.target.value)}
-                        className="w-full px-4 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800 border-none outline-none focus:ring-2 focus:ring-rose-500 text-sm"
-                      />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="text-left">
+                        <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1 ml-1 text-zinc-500">画像1 (URL)</label>
+                        <input
+                          type="url"
+                          placeholder="https://..."
+                          value={newAvatarUrl1}
+                          onChange={(e) => setNewAvatarUrl1(e.target.value)}
+                          className="w-full px-4 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800 border-none outline-none focus:ring-2 focus:ring-rose-500 text-sm"
+                        />
+                      </div>
+                      <div className="text-left">
+                        <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1 ml-1 text-zinc-500">画像2 (URL)</label>
+                        <input
+                          type="url"
+                          placeholder="https://..."
+                          value={newAvatarUrl2}
+                          onChange={(e) => setNewAvatarUrl2(e.target.value)}
+                          className="w-full px-4 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800 border-none outline-none focus:ring-2 focus:ring-rose-500 text-sm"
+                        />
+                      </div>
                     </div>
                   </div>
                   <div className="flex gap-2 justify-end">
@@ -615,7 +629,8 @@ export default function RoomPage() {
                       type="button"
                       onClick={() => {
                         setIsAdding(false);
-                        setNewAvatarUrl("");
+                        setNewAvatarUrl1("");
+                        setNewAvatarUrl2("");
                         setNewCharName("");
                       }}
                       className="px-4 py-2 rounded-xl text-sm font-bold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
