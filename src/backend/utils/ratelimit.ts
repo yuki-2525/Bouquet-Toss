@@ -15,6 +15,16 @@ const rateLimiter = new Map<string, RateLimitInfo>();
 
 export function checkRateLimit(key: string, maxRequests: number, windowMs: number): boolean {
   const now = Date.now();
+
+  // メモリリーク対策: Mapが大きくなりすぎたら期限切れエントリを掃除する
+  if (rateLimiter.size > 10000) {
+    for (const [k, v] of rateLimiter.entries()) {
+      if (now > v.resetTime) {
+        rateLimiter.delete(k);
+      }
+    }
+  }
+
   const info = rateLimiter.get(key);
 
   if (!info) {

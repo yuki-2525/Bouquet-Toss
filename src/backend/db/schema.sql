@@ -69,6 +69,10 @@ CREATE OR REPLACE FUNCTION increment_bouquet(
 DECLARE
   v_my_sent BIGINT;
 BEGIN
+  -- 同一ユーザー、同一キャラクターに対する操作をシリアライズするためのアドバイザリーロック
+  -- これにより、負の数による減算時のチェック（TOCTOU）の正確性を保証します。
+  PERFORM pg_advisory_xact_lock(hashtext(p_user_id::text || p_character_id::text));
+
   -- 負の数（取り消し）の場合のバリデーション
   IF p_count < 0 THEN
     SELECT COALESCE(SUM(count), 0) INTO v_my_sent

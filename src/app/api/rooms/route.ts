@@ -97,7 +97,7 @@ export async function POST(request: Request) {
     const userId = user.id;
 
     // パスワードのハッシュ化 (bcrypt)
-    const saltRounds = 10;
+    const saltRounds = 12;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
     const supabase = createAdminClient();

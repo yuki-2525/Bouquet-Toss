@@ -44,6 +44,25 @@ export async function GET(
     return new Response('Forbidden', { status: 403 });
   }
 
+  // 閲覧権限を持つキャラクターIDのリストを取得
+  // 1. 自分がオーナーであるキャラ
+  const { data: myChars } = await adminSupabase
+    .from('characters')
+    .select('id')
+    .eq('room_id', roomId)
+    .eq('user_id', userId);
+  
+  // 2. 閲覧権限が付与されているキャラ
+  const { data: sharedChars } = await adminSupabase
+    .from('character_access')
+    .select('character_id')
+    .eq('user_id', userId);
+
+  const viewableCharIds = new Set([
+    ...(myChars?.map(c => c.id) || []),
+    ...(sharedChars?.map(c => c.character_id) || [])
+  ]);
+
   const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
@@ -60,9 +79,14 @@ export async function GET(
           'broadcast',
           { event: 'CHARACTER_UPDATE' },
           (payload) => {
-            // total_bouquets_received は秘匿情報のため削除して送出
+            const charId = payload.payload.id;
             const safeData = { ...payload.payload };
-            delete safeData.total_bouquets_received;
+            
+            // 権限がない場合は合計値を削除
+            if (!viewableCharIds.has(charId)) {
+              delete safeData.total_bouquets_received;
+            }
+            
             sendEvent({ type: 'CHARACTER_UPDATE', data: safeData });
           }
         )
@@ -90,7 +114,9 @@ export async function GET(
             
             if (char) {
               const safeData = { ...char };
-              delete safeData.total_bouquets_received;
+              if (!viewableCharIds.has(charId)) {
+                delete safeData.total_bouquets_received;
+              }
               sendEvent({ type: 'CHARACTER_UPDATE', data: safeData });
             }
           }
@@ -109,8 +135,12 @@ export async function GET(
             filter: `room_id=eq.${roomId}`,
           },
           (payload) => {
+            const charId = payload.new.id;
             const safeData = { ...payload.new };
-            delete safeData.total_bouquets_received;
+            
+            if (!viewableCharIds.has(charId)) {
+              delete safeData.total_bouquets_received;
+            }
             sendEvent({ type: 'CHARACTER_INSERT', data: safeData });
           }
         )
