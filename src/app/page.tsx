@@ -79,7 +79,11 @@ export default function Home() {
         </div>
       )}
 
-      <div className="mt-16 text-zinc-400 text-xs">
+      <div className="mt-16 text-zinc-400 text-xs flex flex-col items-center gap-4">
+        <div className="flex gap-6">
+          <Link href="/terms" className="hover:text-rose-500 transition-colors">利用規約</Link>
+          <Link href="/privacy" className="hover:text-rose-500 transition-colors">プライバシーポリシー</Link>
+        </div>
         <p>© 2026 Bouquet-Toss - Developed for sakurayuki</p>
       </div>
     </main>
