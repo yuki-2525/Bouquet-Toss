@@ -12,10 +12,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     }
 
-    // 上限・下限チェック（-1,000 〜 +1,000）
-    // 大量投下による不自然な水増しを防ぐため、1回あたりの上限を1,000に制限します。
-    if (count < -1000 || count > 1000) {
-      return NextResponse.json({ error: 'Count out of range. Max is 1,000 per request.' }, { status: 400 });
+    // 上限・下限チェック（-1,000,000 〜 +1,000,000）
+    // 1回あたりの上限を1,000,000に制限します。
+    if (count < -1000000 || count > 1000000) {
+      return NextResponse.json({ error: 'Count out of range. Max is 1,000,000 per request.' }, { status: 400 });
     }
 
     // 数が0の場合は何もしない
