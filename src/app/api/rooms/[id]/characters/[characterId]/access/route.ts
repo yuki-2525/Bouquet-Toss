@@ -40,12 +40,12 @@ export async function GET(
     if (membersError) throw membersError;
 
     // 3. 現在このキャラの閲覧権限を持っているユーザーID一覧を取得
-    const { data: authorizedUsers, error: authError } = await supabase
+    const { data: authorizedUsers, error: dbAuthError } = await supabase
       .from('character_access')
       .select('user_id')
       .eq('character_id', characterId);
 
-    if (authError) throw authError;
+    if (dbAuthError) throw dbAuthError;
 
     const authSet = new Set(authorizedUsers.map(a => a.user_id));
 
