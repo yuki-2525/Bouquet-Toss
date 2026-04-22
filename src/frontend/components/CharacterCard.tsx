@@ -3,8 +3,8 @@ import { BouquetButton } from "./BouquetButton";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
-interface KnightCardProps {
-  knightName: string;
+interface CharacterCardProps {
+  characterName: string;
   avatarUrl?: string;
   mySentCount: number;
   onThrowBouquet: (amount: number) => void;
@@ -12,14 +12,14 @@ interface KnightCardProps {
   isLocked?: boolean;
 }
 
-export function KnightCard({ 
-  knightName, 
+export function CharacterCard({ 
+  characterName, 
   avatarUrl,
   mySentCount, 
   onThrowBouquet, 
   isOwner = false,
   isLocked = false,
-}: KnightCardProps) {
+}: CharacterCardProps) {
   
   const [customAmount, setCustomAmount] = useState<number>(50);
   const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
@@ -35,7 +35,7 @@ export function KnightCard({
 
       <div className="flex flex-col items-center gap-6 relative z-10">
         <h3 className="text-3xl font-serif font-bold tracking-widest text-zinc-800 dark:text-zinc-100 text-center">
-          {knightName}
+          {characterName}
         </h3>
 
         {/* キャラクター画像 (存在する場合) */}
@@ -50,7 +50,7 @@ export function KnightCard({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img 
                   src={url} 
-                  alt={`${knightName} ${i + 1}`} 
+                  alt={`${characterName} ${i + 1}`} 
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = 'none';

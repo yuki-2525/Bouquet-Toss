@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { KnightCard } from "@/frontend/components/KnightCard";
+import { CharacterCard } from "@/frontend/components/CharacterCard";
 import { useBouquetSender } from "@/frontend/hooks/useBouquetSender";
 import { useUser } from "@/frontend/contexts/AuthContext";
 import { LoadingScreen } from "@/frontend/components/LoadingScreen";
@@ -55,7 +55,7 @@ export default function ThrowBouquetPage() {
   }
 
   if (!character) {
-    return <LoadingScreen message="Preparing the Knight" />;
+    return <LoadingScreen message="Preparing the Character" />;
   }
 
   const isOwner = character.ownerId === currentUserId;
@@ -80,8 +80,8 @@ export default function ThrowBouquetPage() {
           </h2>
         </div>
         
-        <KnightCard
-          knightName={character.name}
+        <CharacterCard
+          characterName={character.name}
           avatarUrl={character.avatarUrl}
           mySentCount={localCount}
           onThrowBouquet={handleThrow}
