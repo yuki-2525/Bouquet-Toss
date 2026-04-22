@@ -120,7 +120,7 @@ function SortableCharacterItem({
         // 通常モード: カード
         <div
           onClick={() => router.push(`/rooms/${roomId}/throw/${char.id}`)}
-          className="group relative flex items-center justify-between overflow-hidden rounded-2xl bg-white dark:bg-zinc-900/80 p-4 sm:p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-md hover:border-rose-500/50 cursor-pointer"
+          className="group relative flex items-center justify-between rounded-2xl bg-white dark:bg-zinc-900/80 p-4 sm:p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-md hover:border-rose-500/50 cursor-pointer"
         >
           <div className="flex items-center gap-4 sm:gap-6">
             <div className="w-20 h-14 sm:w-28 sm:h-20 shrink-0 rounded-xl bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-rose-500 transition-transform group-hover:scale-[1.03] overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm">
