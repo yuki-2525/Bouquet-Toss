@@ -5,61 +5,39 @@ Vercel Serverless Functions 上で動作する BFF (Backend for Frontend) とし
 
 ## 1. API 仕様 (`src/app/api/`)
 
-フロントエンドはデータベースを直接触らず、必ず以下のAPIエンドポイントを経由してバックエンドと通信します。
-
 ### `POST /api/bouquets`
 ブーケ投下のバッチ処理（一括加算）を行います。
-
 - **概要:** フロントエンドでバッファリングされた複数回分のブーケ投下を、1回のリクエストでデータベースに反映させます。
-- **Request Body (JSON):**
-  ```json
-  {
-    "roomId": "string (UUID)",
-    "characterId": "string (UUID)",
-    "userId": "string (UUID)", // ゲストの場合はフロントで生成された一意のID
-    "count": 50 // 追加するブーケの数
-  }
-  ```
-- **処理内容:**
-  - リクエストのバリデーション。
-  - Supabase の RPC `increment_bouquet` を呼び出し、ログの挿入・キャラクターへの加算・ユーザーへの加算を1トランザクションで実行。
-- **Response:**
-  - `200 OK`: `{"success": true}`
-  - `400 / 500 Error`: `{"error": "エラーメッセージ"}`
+- **RPC `increment_bouquet`**: ログの挿入、キャラクターの累計加算、ユーザーの累計加算を1トランザクションで実行します。
 
 ### `GET /api/rooms/[id]`
 指定されたルームの詳細と、関連するキャラクターの情報を取得します。
+- **権限管理**: リクエストしたユーザーがオーナー（または閲覧許可設定済み）の場合、キャラクターの `totalBouquets` を返却します。それ以外の場合は `null` または秘匿された値を返却します。
 
-- **Response (JSON):**
-  ```json
-  {
-    "id": "uuid",
-    "name": "ルーム名",
-    "characters": [
-      {
-        "id": "uuid",
-        "name": "騎士名",
-        "mySentCount": 150 // リクエストしたユーザー自身が送った数のみを返す。総数は返さない。
-      }
-    ]
-  }
-  ```
+### `GET /api/rooms/[id]/characters/[characterId]/stats`
+特定のキャラクターに対するブーケ投下の詳細内訳（誰が何本贈ったか）を取得します。
+- **概要**: 贈ってくれた人々のリストとそれぞれの合計本数を返却します。
+- **セキュリティ**: 原則としてキャラクターのオーナーのみが詳細を確認できます。
+
+### `PATCH /api/rooms/[id]/characters/[characterId]/access`
+統計ページの閲覧権限を更新します。
+- **概要**: オーナーが、特定のユーザーに対して統計情報の閲覧を許可/禁止します。
+
+### `GET /api/rooms/[id]/events` (SSE)
+ルーム内のリアルタイム更新をプッシュ通知します。
+- **通知内容**:
+  - `CHARACTER_UPDATE`: ブーケ数の増加
+  - `CHARACTER_INSERT`: 新キャラクターの追加
+  - `MEMBERS_UPDATE`: 参加メンバーの更新
 
 ## 2. データベース設計 (Supabase)
 
-データの永続化と集計には Supabase (PostgreSQL) を使用します。
-初期化用のSQLスクリプトは `src/backend/db/schema.sql` に配置されています。
-
 ### 主要テーブル
-1. **`users` (ユーザー)**
-   - アカウント作成者だけでなく、ゲストユーザーも内部的なUUIDを割り当ててレコードを作成します(`is_guest: true`)。
-   - `display_name` は "ゲスト1" のようになります。
-2. **`rooms` (ルーム)**
-   - セッションの部屋。名前と入室用パスワードハッシュを保持します。
-3. **`characters` (キャラクター/騎士)**
-   - ルームに紐づくブーケの受け取り手。`total_bouquets_received` で累計数を管理します。
-4. **`bouquet_logs` (ブーケ投下ログ)**
-   - 「誰から」「誰へ」「どの部屋で」「何本」贈られたかの履歴を保持します。
+1. **`users`**: ゲストおよびログインユーザー。`is_guest` フラグで管理。
+2. **`rooms`**: ルーム情報とパスワード、作成者情報を保持。
+3. **`characters`**: `avatar_url`（カンマ区切りで複数保持可能）、`total_bouquets_received` などを保持。
+4. **`bouquet_logs`**: 投下履歴。
+5. **`character_access_controls`**: 統計情報の閲覧権限マトリクス。
 
-### トランザクション処理 (RPC)
-複数テーブルの同時更新（ログ追加とカウントアップ）を高速かつ安全に行うため、PostgreSQLのストアドプロシージャ（RPC）である `increment_bouquet` 関数を使用します。APIは個別のテーブルをUPDATEするのではなく、このRPCを呼び出すだけです。
+### リアルタイム同期
+Supabase の **Realtime (Broadcast/Presence)** ではなく、Next.js Route Handlers を介した **Server-Sent Events (SSE)** を採用しています。これにより、ビジネスロジックを挟んだ上での確実なデータ配信を実現しています。
