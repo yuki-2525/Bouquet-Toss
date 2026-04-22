@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient, createServerClient } from '@/backend/db/supabase-server';
-import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 import { checkRateLimit } from '@/backend/utils/ratelimit';
 
 /**
@@ -28,13 +28,11 @@ export async function POST(
     const userId = user.id;
 
     const clientIp = request.headers.get('x-forwarded-for') || 'unknown';
-    const limitKey = `unlock_${roomId}_${clientIp}`;
+    // ユーザーIDも含めてレートリミットをかける
+    const limitKey = `unlock_${roomId}_${userId}_${clientIp}`;
     if (!checkRateLimit(limitKey, 5, 60000)) {
       return NextResponse.json({ error: 'Too many attempts. Please try again later.' }, { status: 429 });
     }
-
-    // パスワードのハッシュ化 (SHA-256)
-    const passwordHash = crypto.createHash('sha256').update(password).digest('hex');
 
     const supabase = createAdminClient();
 
@@ -49,8 +47,9 @@ export async function POST(
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
 
-    // パスワード照合
-    if (room.password_hash !== passwordHash) {
+    // パスワード照合 (bcrypt)
+    const isMatch = await bcrypt.compare(password, room.password_hash);
+    if (!isMatch) {
       return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
     }
 

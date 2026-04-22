@@ -22,16 +22,23 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid name' }, { status: 400 });
     }
 
-    // バリデーション: avatarUrl (https:// のみ許可)
+    // バリデーション: avatarUrl (カンマ区切り対応, https:// のみ許可)
     if (avatarUrl) {
-      try {
-        const urlObj = new URL(avatarUrl);
-        if (urlObj.protocol !== 'https:') {
-          return NextResponse.json({ error: 'Avatar URL must be https' }, { status: 400 });
-        }
-      } catch {
-        return NextResponse.json({ error: 'Invalid Avatar URL format' }, { status: 400 });
+      const urls = avatarUrl.split(',').map((u: string) => u.trim()).filter(Boolean);
+      if (urls.length > 3) {
+        return NextResponse.json({ error: 'Too many avatar URLs (max 3)' }, { status: 400 });
       }
+      for (const u of urls) {
+        try {
+          const urlObj = new URL(u);
+          if (urlObj.protocol !== 'https:') {
+            return NextResponse.json({ error: 'All Avatar URLs must be https' }, { status: 400 });
+          }
+        } catch {
+          return NextResponse.json({ error: 'Invalid Avatar URL format' }, { status: 400 });
+        }
+      }
+      avatarUrl = urls.join(',');
     }
 
     // セッションからユーザーID取得 (IDOR対策)

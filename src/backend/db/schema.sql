@@ -66,7 +66,20 @@ CREATE OR REPLACE FUNCTION increment_bouquet(
   p_user_id UUID,
   p_count INTEGER
 ) RETURNS void AS $$
+DECLARE
+  v_my_sent BIGINT;
 BEGIN
+  -- 負の数（取り消し）の場合のバリデーション
+  IF p_count < 0 THEN
+    SELECT COALESCE(SUM(count), 0) INTO v_my_sent
+    FROM public.bouquet_logs
+    WHERE from_user_id = p_user_id AND to_character_id = p_character_id;
+
+    IF v_my_sent + p_count < 0 THEN
+      RAISE EXCEPTION 'Cannot cancel more bouquets than you have sent to this character.';
+    END IF;
+  END IF;
+
   -- ログの挿入
   INSERT INTO public.bouquet_logs (room_id, to_character_id, from_user_id, count)
   VALUES (p_room_id, p_character_id, p_user_id, p_count);

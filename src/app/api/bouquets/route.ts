@@ -7,14 +7,15 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { roomId, characterId, count } = body;
 
-    // 数値型チェック
-    if (!roomId || !characterId || typeof count !== 'number') {
+    // 厳密な数値チェック (NaN, 小数, Infinity 対策)
+    if (!roomId || !characterId || !Number.isInteger(count)) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     }
 
-    // 上限・下限チェック（-1000万 〜 +1000万）
-    if (count < -10000000 || count > 10000000) {
-      return NextResponse.json({ error: 'Count out of range. Max is 10,000,000.' }, { status: 400 });
+    // 上限・下限チェック（-1,000 〜 +1,000）
+    // 大量投下による不自然な水増しを防ぐため、1回あたりの上限を1,000に制限します。
+    if (count < -1000 || count > 1000) {
+      return NextResponse.json({ error: 'Count out of range. Max is 1,000 per request.' }, { status: 400 });
     }
 
     // 数が0の場合は何もしない
@@ -40,6 +41,42 @@ export async function POST(request: Request) {
     }
 
     const supabase = createAdminClient();
+
+    // 1. ルームへのアクセス権限をチェック
+    const { data: room, error: roomError } = await supabase
+      .from('rooms')
+      .select('created_by')
+      .eq('id', roomId)
+      .single();
+
+    if (roomError || !room) {
+      return NextResponse.json({ error: 'Room not found' }, { status: 404 });
+    }
+
+    if (room.created_by !== userId) {
+      const { data: access } = await supabase
+        .from('room_access')
+        .select('*')
+        .eq('room_id', roomId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (!access) {
+        return NextResponse.json({ error: 'Forbidden: You do not have access to this room' }, { status: 403 });
+      }
+    }
+
+    // 2. キャラクターが指定されたルームに属しているかチェック (嫌がらせ防止)
+    const { data: charCheck } = await supabase
+      .from('characters')
+      .select('id')
+      .eq('id', characterId)
+      .eq('room_id', roomId)
+      .maybeSingle();
+
+    if (!charCheck) {
+      return NextResponse.json({ error: 'Character not found in this room' }, { status: 404 });
+    }
 
     // Supabase RPC (increment_bouquet) を呼び出してアトミックに加算
     // ※マイナスのcount（取り消し）も許容するため、そのまま渡す

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createAdminClient } from '@/backend/db/supabase-server';
+import { createAdminClient, createServerClient } from '@/backend/db/supabase-server';
 
 interface CharacterOrder {
   id: string;
@@ -13,12 +13,20 @@ export async function PATCH(
   try {
     const { id: roomId } = await params;
     const body = await request.json();
-    const { userId, characters }: { userId: string; characters: CharacterOrder[] } = body;
+    const { characters }: { characters: CharacterOrder[] } = body;
 
     // バリデーション
-    if (!userId || !Array.isArray(characters) || characters.length === 0) {
+    if (!Array.isArray(characters) || characters.length === 0) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     }
+
+    // セッション認証 (IDOR対策)
+    const supabaseSession = await createServerClient();
+    const { data: { user } } = await supabaseSession.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const userId = user.id;
 
     const supabase = createAdminClient();
 

@@ -102,6 +102,21 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
+    // 付与対象のユーザーがルームに参加しているかチェック (嫌がらせ/ゴミデータ防止)
+    if (hasAccess) {
+      const { data: charData } = await supabase.from('characters').select('room_id').eq('id', characterId).single();
+      const { data: memberCheck } = await supabase
+        .from('room_access')
+        .select('*')
+        .eq('room_id', charData?.room_id)
+        .eq('user_id', targetUserId)
+        .maybeSingle();
+
+      if (!memberCheck) {
+        return NextResponse.json({ error: 'Target user is not a member of this room' }, { status: 400 });
+      }
+    }
+
     if (hasAccess) {
       // 権限付与
       await supabase

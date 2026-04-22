@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient, createServerClient } from '@/backend/db/supabase-server';
-import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 import { checkRateLimit } from '@/backend/utils/ratelimit';
 
 /**
@@ -78,6 +78,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    if (password.length < 4) {
+      return NextResponse.json({ error: 'Password must be at least 4 characters long' }, { status: 400 });
+    }
+
     name = name.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim().slice(0, 50);
     if (!name) {
       return NextResponse.json({ error: 'Invalid room name' }, { status: 400 });
@@ -92,8 +96,9 @@ export async function POST(request: Request) {
 
     const userId = user.id;
 
-    // パスワードのハッシュ化 (SHA-256)
-    const passwordHash = crypto.createHash('sha256').update(password).digest('hex');
+    // パスワードのハッシュ化 (bcrypt)
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(password, saltRounds);
 
     const supabase = createAdminClient();
 
