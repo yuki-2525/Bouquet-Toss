@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient, createAdminClient } from '@/backend/db/supabase-server';
+import { getAppOrigin } from '@/shared/utils/url';
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
+  const origin = getAppOrigin(request);
   const code = searchParams.get('code');
   const rawRedirect = searchParams.get('redirect') || '/';
   // Open Redirect 対策

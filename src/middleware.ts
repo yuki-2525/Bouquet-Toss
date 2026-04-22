@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createMiddlewareClient } from '@/backend/db/supabase';
+import { getAppOrigin } from '@/shared/utils/url';
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request });
@@ -14,7 +15,7 @@ export async function middleware(request: NextRequest) {
   // 未ログインで /rooms/* にアクセスした場合、/login にリダイレクト
   // （ログインページ自体は /login?redirect=... でリダイレクト先を保持する）
   if (isRoomPath && !session) {
-    const redirectUrl = new URL('/login', request.url);
+    const redirectUrl = new URL('/login', getAppOrigin(request));
     const targetPath = request.nextUrl.pathname + request.nextUrl.search;
     redirectUrl.searchParams.set('redirect', targetPath);
     return NextResponse.redirect(redirectUrl);

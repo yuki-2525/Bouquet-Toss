@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/backend/db/supabase-server';
+import { getAppOrigin } from '@/shared/utils/url';
 
 export async function POST(request: Request) {
   try {
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${new URL(request.url).origin}/auth/callback?redirect=${encodeURIComponent(safeRedirect)}`,
+        redirectTo: `${getAppOrigin(request)}/auth/callback?redirect=${encodeURIComponent(safeRedirect)}`,
       },
     });
 
