@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Bouquet-Toss",
     description: "ブーケを投げるwebアプリ",
-    url: "https://bouquet-toss.vercel.app", // 本番URLが確定していれば書き換えてください
+    url: "https://bouquet-toss.sakurayuki.dev",
     siteName: "Bouquet-Toss",
     locale: "ja_JP",
     type: "website",
