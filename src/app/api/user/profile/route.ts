@@ -14,10 +14,15 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { displayName } = await request.json();
+    let { displayName } = await request.json();
 
-    if (!displayName || displayName.trim().length === 0) {
+    if (!displayName) {
       return NextResponse.json({ error: 'Display name is required' }, { status: 400 });
+    }
+
+    displayName = displayName.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim().slice(0, 30);
+    if (!displayName) {
+      return NextResponse.json({ error: 'Invalid display name' }, { status: 400 });
     }
 
     // DB更新には確実に書き込めるよう Admin権限を使用
@@ -42,7 +47,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ success: true, displayName: displayName.trim() });
   } catch (error: any) {
     console.error('Profile update error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
@@ -69,7 +74,7 @@ export async function GET() {
 
     return NextResponse.json(userData);
   } catch (error: any) {
-    console.error('Profile fetch error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Profile API error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

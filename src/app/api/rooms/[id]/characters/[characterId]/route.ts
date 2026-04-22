@@ -11,7 +11,23 @@ export async function PATCH(
   try {
     const { id: roomId, characterId } = await params;
     const body = await request.json();
-    const { name, avatarUrl } = body;
+    let { name, avatarUrl } = body;
+
+    if (name !== undefined) {
+      name = name.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim().slice(0, 30);
+      if (!name) return NextResponse.json({ error: 'Invalid name' }, { status: 400 });
+    }
+
+    if (avatarUrl) {
+      try {
+        const urlObj = new URL(avatarUrl);
+        if (urlObj.protocol !== 'https:') {
+          return NextResponse.json({ error: 'Avatar URL must be https' }, { status: 400 });
+        }
+      } catch {
+        return NextResponse.json({ error: 'Invalid Avatar URL format' }, { status: 400 });
+      }
+    }
 
     const supabase = await createServerClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -52,7 +68,7 @@ export async function PATCH(
     return NextResponse.json(data);
   } catch (error: any) {
     console.error('Update character error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
@@ -94,6 +110,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Delete character error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

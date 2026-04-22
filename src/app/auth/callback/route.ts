@@ -5,7 +5,10 @@ import { createServerClient, createAdminClient } from '@/backend/db/supabase-ser
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const redirect = searchParams.get('redirect') || '/';
+  const rawRedirect = searchParams.get('redirect') || '/';
+  // Open Redirect 対策
+  const redirect = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') && !rawRedirect.startsWith('/\\')
+    ? rawRedirect : '/';
 
   if (code) {
     const supabase = await createServerClient();

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createAdminClient } from '@/backend/db/supabase-server';
+import { createAdminClient, createServerClient } from '@/backend/db/supabase-server';
 
 /**
  * キャラクターの統計閲覧権限（共有ユーザー）を管理する
@@ -10,12 +10,13 @@ export async function GET(
 ) {
   try {
     const { id: roomId, characterId } = await params;
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+    const supabaseSession = await createServerClient();
+    const { data: { user }, error: authError } = await supabaseSession.auth.getUser();
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const userId = user.id;
 
     const supabase = createAdminClient();
 
@@ -61,7 +62,7 @@ export async function GET(
     return NextResponse.json(result);
   } catch (error: any) {
     console.error('Get character access error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
@@ -74,11 +75,19 @@ export async function POST(
 ) {
   try {
     const { characterId } = await params;
-    const { targetUserId, userId, hasAccess } = await request.json();
+    const { targetUserId, hasAccess } = await request.json();
 
-    if (!targetUserId || !userId) {
+    if (!targetUserId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+
+    const supabaseSession = await createServerClient();
+    const { data: { user }, error: authError } = await supabaseSession.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const userId = user.id;
 
     const supabase = createAdminClient();
 
@@ -110,6 +119,6 @@ export async function POST(
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Toggle character access error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

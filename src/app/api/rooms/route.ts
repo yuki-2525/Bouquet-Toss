@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient, createServerClient } from '@/backend/db/supabase-server';
 import crypto from 'crypto';
+import { checkRateLimit } from '@/backend/utils/ratelimit';
 
 /**
  * ユーザーに関連するルーム（作成したルーム ＋ アクセス権を持つルーム）を一覧取得する
@@ -57,7 +58,7 @@ export async function GET(request: Request) {
     return NextResponse.json(allRooms);
   } catch (error: any) {
     console.error('List rooms error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
@@ -66,10 +67,20 @@ export async function GET(request: Request) {
  */
 export async function POST(request: Request) {
   try {
-    const { name, password } = await request.json();
+    let { name, password } = await request.json();
+
+    const clientIp = request.headers.get('x-forwarded-for') || 'unknown';
+    if (!checkRateLimit(`create_room_${clientIp}`, 5, 60000)) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
 
     if (!name || !password) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    name = name.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim().slice(0, 50);
+    if (!name) {
+      return NextResponse.json({ error: 'Invalid room name' }, { status: 400 });
     }
 
     const supabaseSession = await createServerClient();
@@ -107,6 +118,6 @@ export async function POST(request: Request) {
     return NextResponse.json(room);
   } catch (error: any) {
     console.error('Room creation error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

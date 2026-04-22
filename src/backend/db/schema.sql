@@ -35,8 +35,24 @@ CREATE TABLE IF NOT EXISTS public.bouquet_logs (
   room_id UUID REFERENCES public.rooms(id) ON DELETE CASCADE,
   from_user_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
   to_character_id UUID REFERENCES public.characters(id) ON DELETE CASCADE,
-  count INTEGER NOT NULL CHECK (count > 0),
+  count INTEGER NOT NULL, -- バリデーションはAPI側でも行うため、マイナス（取り消し）も許容する場合はCHECKを外す
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- public.room_access ルームへの入室権限テーブル
+CREATE TABLE IF NOT EXISTS public.room_access (
+  room_id UUID REFERENCES public.rooms(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  PRIMARY KEY (room_id, user_id)
+);
+
+-- public.character_access 個別の統計閲覧権限テーブル
+CREATE TABLE IF NOT EXISTS public.character_access (
+  character_id UUID REFERENCES public.characters(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  PRIMARY KEY (character_id, user_id)
 );
 
 -- 高速な集計のためのインデックス
@@ -74,6 +90,5 @@ ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.rooms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.characters ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bouquet_logs ENABLE ROW LEVEL SECURITY;
--- room_access と character_access テーブルが存在する場合はそれらにも適用
--- ALTER TABLE public.room_access ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE public.character_access ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.room_access ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.character_access ENABLE ROW LEVEL SECURITY;

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient } from '@/backend/db/supabase-server';
+import { createAdminClient, createServerClient } from '@/backend/db/supabase-server';
 
 /**
  * リアルタイム更新用の SSE (Server-Sent Events) エンドポイント
@@ -9,7 +9,40 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: roomId } = await params;
+
+  // セッション認証
+  const supabaseSession = await createServerClient();
+  const { data: { user } } = await supabaseSession.auth.getUser();
+  if (!user) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+  const userId = user.id;
+
   const adminSupabase = createAdminClient();
+
+  // アクセス権の確認
+  const { data: room } = await adminSupabase
+    .from('rooms')
+    .select('created_by')
+    .eq('id', roomId)
+    .single();
+
+  if (!room) return new Response('Not Found', { status: 404 });
+
+  let hasAccess = room.created_by === userId;
+  if (!hasAccess) {
+    const { data: access } = await adminSupabase
+      .from('room_access')
+      .select('*')
+      .eq('room_id', roomId)
+      .eq('user_id', userId)
+      .maybeSingle();
+    hasAccess = !!access;
+  }
+
+  if (!hasAccess) {
+    return new Response('Forbidden', { status: 403 });
+  }
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -27,7 +60,10 @@ export async function GET(
           'broadcast',
           { event: 'CHARACTER_UPDATE' },
           (payload) => {
-            sendEvent({ type: 'CHARACTER_UPDATE', data: payload.payload });
+            // total_bouquets_received は秘匿情報のため削除して送出
+            const safeData = { ...payload.payload };
+            delete safeData.total_bouquets_received;
+            sendEvent({ type: 'CHARACTER_UPDATE', data: safeData });
           }
         )
         .subscribe();
@@ -53,7 +89,9 @@ export async function GET(
               .single();
             
             if (char) {
-              sendEvent({ type: 'CHARACTER_UPDATE', data: char });
+              const safeData = { ...char };
+              delete safeData.total_bouquets_received;
+              sendEvent({ type: 'CHARACTER_UPDATE', data: safeData });
             }
           }
         )
@@ -71,7 +109,9 @@ export async function GET(
             filter: `room_id=eq.${roomId}`,
           },
           (payload) => {
-            sendEvent({ type: 'CHARACTER_INSERT', data: payload.new });
+            const safeData = { ...payload.new };
+            delete safeData.total_bouquets_received;
+            sendEvent({ type: 'CHARACTER_INSERT', data: safeData });
           }
         )
         .subscribe();

@@ -41,6 +41,7 @@ export async function GET() {
       }
     });
   } catch (error: any) {
-    return NextResponse.json({ user: null, error: error.message });
+    console.error('Session API error:', error);
+    return NextResponse.json({ user: null, error: 'Internal Server Error' });
   }
 }

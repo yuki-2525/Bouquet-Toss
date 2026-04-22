@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient, createServerClient } from '@/backend/db/supabase-server';
+import { checkRateLimit } from '@/backend/utils/ratelimit';
 
 export async function POST(request: Request) {
   try {
@@ -21,7 +22,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, message: 'Skipped' });
     }
 
-    // IDOR対策: クライアントからのuserIdを信用せず、セッションから取得する
     const supabaseSession = await createServerClient();
     const { data: { user }, error: authError } = await supabaseSession.auth.getUser();
 
@@ -30,6 +30,14 @@ export async function POST(request: Request) {
     }
 
     const userId = user.id;
+
+    // レートリミット (1分間に30回まで)
+    // IPアドレスベースが理想ですが、Vercelのrequest.ipは取得できない場合があるためユーザーIDで制限します。
+    const clientIp = request.headers.get('x-forwarded-for') || 'unknown';
+    const limitKey = `bouquets_${userId}_${clientIp}`;
+    if (!checkRateLimit(limitKey, 30, 60000)) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
 
     const supabase = createAdminClient();
 

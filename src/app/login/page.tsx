@@ -38,7 +38,10 @@ function XIcon() {
 function LoginContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const redirect = searchParams.get("redirect") || "/";
+  const rawRedirect = searchParams.get("redirect") || "/";
+  // Open Redirect 対策 (念のためフロントエンドでも検証)
+  const redirect = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") && !rawRedirect.startsWith("/\\")
+    ? rawRedirect : "/";
   const { refreshUser } = useUser();
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -50,7 +53,7 @@ function LoginContent() {
       const res = await fetch('/api/auth/login-social', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider }),
+        body: JSON.stringify({ provider, redirect }),
       });
       
       const data = await res.json();

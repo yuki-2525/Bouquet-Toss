@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient, createServerClient } from '@/backend/db/supabase-server';
 import crypto from 'crypto';
+import { checkRateLimit } from '@/backend/utils/ratelimit';
 
 /**
  * ルームのパスワード認証を行い、アクセス権を付与する
@@ -25,6 +26,12 @@ export async function POST(
     }
 
     const userId = user.id;
+
+    const clientIp = request.headers.get('x-forwarded-for') || 'unknown';
+    const limitKey = `unlock_${roomId}_${clientIp}`;
+    if (!checkRateLimit(limitKey, 5, 60000)) {
+      return NextResponse.json({ error: 'Too many attempts. Please try again later.' }, { status: 429 });
+    }
 
     // パスワードのハッシュ化 (SHA-256)
     const passwordHash = crypto.createHash('sha256').update(password).digest('hex');
@@ -60,6 +67,6 @@ export async function POST(
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Unlock error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createAdminClient } from '@/backend/db/supabase-server';
+import { createAdminClient, createServerClient } from '@/backend/db/supabase-server';
 
 /**
  * 新しい騎士（キャラクター）を追加する
@@ -10,11 +10,38 @@ export async function POST(
 ) {
   try {
     const { id: roomId } = await params;
-    const { name, userId, avatarUrl } = await request.json();
+    let { name, avatarUrl } = await request.json();
 
-    if (!name || !userId) {
+    if (!name) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+
+    // バリデーション: name (制御文字除去 + 30文字制限)
+    name = name.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim().slice(0, 30);
+    if (!name) {
+      return NextResponse.json({ error: 'Invalid name' }, { status: 400 });
+    }
+
+    // バリデーション: avatarUrl (https:// のみ許可)
+    if (avatarUrl) {
+      try {
+        const urlObj = new URL(avatarUrl);
+        if (urlObj.protocol !== 'https:') {
+          return NextResponse.json({ error: 'Avatar URL must be https' }, { status: 400 });
+        }
+      } catch {
+        return NextResponse.json({ error: 'Invalid Avatar URL format' }, { status: 400 });
+      }
+    }
+
+    // セッションからユーザーID取得 (IDOR対策)
+    const supabaseSession = await createServerClient();
+    const { data: { user }, error: authError } = await supabaseSession.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const userId = user.id;
 
     const supabase = createAdminClient();
 
@@ -75,6 +102,6 @@ export async function POST(
     });
   } catch (error: any) {
     console.error('Add character error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

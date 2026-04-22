@@ -119,8 +119,8 @@ export async function GET(
       members: formattedMembers
     });
     
-  } catch (error) {
-    console.error('Room API Error:', error);
+  } catch (error: any) {
+    console.error('Get room error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
