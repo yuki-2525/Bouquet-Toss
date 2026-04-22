@@ -10,27 +10,32 @@
 ## 2. データベース (Supabase) の準備
 
 1. [Supabase](https://supabase.com/) にログインし、新しいプロジェクトを作成します。
-2. ダッシュボードから **SQL Editor** を開きます。
-3. 本リポジトリの `src/backend/db/schema.sql` の内容をコピーし、SQL Editorに貼り付けて **Run** (実行) します。
-   これにより、必要なテーブル(`users`, `rooms`, `characters`, `bouquet_logs`)と、ストアドプロシージャ(`increment_bouquet`)が作成されます。
+# セットアップガイド (Setup)
 
-## 3. 環境変数の設定
+## 1. Supabase の準備
 
-1. プロジェクトのルートディレクトリ（`Bouquet-Toss/`）に `.env.local` ファイルを作成します。
-2. Supabase のダッシュボード (Project Settings -> API) から、URLとキーを取得し、以下のように記載します。
+1. [Supabase Dashboard](https://supabase.com/dashboard) でプロジェクトを作成。
+2. **SQL Editor** を開き、リポジトリ内の `src/backend/db/schema.sql` を実行してテーブルと関数を作成。
+3. **Authentication** > **Providers** で、使用したい認証方法（Email, Google等）を有効化。
+
+## 2. 環境変数の設定
+
+プロジェクト直下に `.env.local` ファイルを作成し、以下の値を設定してください。
 
 ```env
-# Supabase Project URL
-NEXT_PUBLIC_SUPABASE_URL=https://[YOUR_PROJECT_ID].supabase.co
+# Supabase 設定
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
-# Supabase API Key (anon/public)
-NEXT_PUBLIC_SUPABASE_ANON_KEY=[YOUR_ANON_KEY]
-
-# (オプション) API Routes等で特権操作が必要な場合に使用
-SUPABASE_SERVICE_ROLE_KEY=[YOUR_SERVICE_ROLE_KEY]
+# アプリ設定
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-## 4. 依存パッケージのインストールと起動
+### ⚠️ デプロイ時の注意点 (Vercel)
+Vercelの管理画面で環境変数を設定する際は、**必ず `NEXT_PUBLIC_` プレフィックスを付けてください。** これがないとフロントエンド側からSupabaseに接続できず、無限ローディングやエラーの原因になります。
+
+## 3. 起動
 
 ```bash
 # パッケージのインストール
