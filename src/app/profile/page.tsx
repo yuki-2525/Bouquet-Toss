@@ -22,7 +22,9 @@ export default function ProfilePage() {
   const { user, setUser, signOut } = useUser();
 
   const [displayName, setDisplayName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [isEditingName, setIsEditingName] = useState(false);
+  const [isEditingAvatar, setIsEditingAvatar] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [myCharacters, setMyCharacters] = useState<MyCharacter[]>([]);
   const [isLoadingChars, setIsLoadingChars] = useState(true);
@@ -30,6 +32,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (user) {
       setDisplayName(user.displayName);
+      setAvatarUrl(user.avatarUrl || "");
       fetchMyCharacters();
     }
   }, [user]);
@@ -48,9 +51,9 @@ export default function ProfilePage() {
     }
   };
 
-  const handleUpdateName = async () => {
-    if (!displayName.trim() || displayName === user?.displayName) {
-      setIsEditingName(false);
+  const handleUpdateProfile = async () => {
+    if (!displayName.trim()) {
+      alert("名前を入力してください");
       return;
     }
 
@@ -59,14 +62,22 @@ export default function ProfilePage() {
       const res = await fetch("/api/user/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ displayName: displayName.trim() }),
+        body: JSON.stringify({ 
+          displayName: displayName.trim(),
+          avatarUrl: avatarUrl.trim() || null
+        }),
       });
 
       if (res.ok) {
-        setUser(prev => prev ? { ...prev, displayName: displayName.trim() } : null);
+        setUser(prev => prev ? { 
+          ...prev, 
+          displayName: displayName.trim(),
+          avatarUrl: avatarUrl.trim() || null
+        } : null);
         setIsEditingName(false);
+        setIsEditingAvatar(false);
       } else {
-        alert("名前の更新に失敗しました");
+        alert("プロフィールの更新に失敗しました");
       }
     } catch (err) {
       alert("エラーが発生しました");
@@ -96,13 +107,51 @@ export default function ProfilePage() {
         <section className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-zinc-200 dark:border-zinc-800 shadow-xl mb-8">
           <div className="flex flex-col sm:flex-row items-center gap-8">
             <div className="relative group">
-              <div className="w-24 h-24 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-rose-500 overflow-hidden border-4 border-white dark:border-zinc-800 shadow-lg">
-                {user.avatarUrl ? (
-                  <img src={user.avatarUrl} alt={user.displayName} className="w-full h-full object-cover" />
+              <div 
+                onClick={() => setIsEditingAvatar(true)}
+                className="w-24 h-24 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-rose-500 overflow-hidden border-4 border-white dark:border-zinc-800 shadow-lg cursor-pointer hover:opacity-80 transition-all"
+              >
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
                 ) : (
                   <UserCircle className="w-12 h-12" />
                 )}
+                <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Pencil className="w-5 h-5 text-white" />
+                </div>
               </div>
+
+              {isEditingAvatar && (
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 z-20 w-64 p-4 bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-700 animate-in fade-in zoom-in duration-200">
+                  <p className="text-xs font-bold text-zinc-400 mb-2 uppercase tracking-wider">画像URLを入力</p>
+                  <input
+                    type="url"
+                    value={avatarUrl}
+                    onChange={(e) => setAvatarUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-900 text-sm outline-none focus:ring-2 focus:ring-rose-500 mb-3"
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setAvatarUrl(user?.avatarUrl || "");
+                        setIsEditingAvatar(false);
+                      }}
+                      className="flex-1 px-3 py-1.5 rounded-lg text-xs font-bold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                    >
+                      キャンセル
+                    </button>
+                    <button
+                      onClick={handleUpdateProfile}
+                      disabled={isUpdating}
+                      className="flex-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-500 text-white hover:bg-rose-600 transition-colors"
+                    >
+                      {isUpdating ? "..." : "適用"}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex-1 text-center sm:text-left">
@@ -113,13 +162,13 @@ export default function ProfilePage() {
                       type="text"
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
-                      className="text-2xl font-bold bg-zinc-50 dark:bg-zinc-800 border-b-2 border-rose-500 outline-none px-2 py-1 rounded-t-md"
+                      className="text-2xl font-bold bg-zinc-50 dark:bg-zinc-800 border-b-2 border-rose-500 outline-none px-2 py-1 rounded-t-md w-full sm:w-auto"
                       autoFocus
                     />
                     <button
-                      onClick={handleUpdateName}
+                      onClick={handleUpdateProfile}
                       disabled={isUpdating}
-                      className="p-2 bg-rose-500 text-white rounded-full hover:bg-rose-600 transition-colors"
+                      className="p-2 bg-rose-500 text-white rounded-full hover:bg-rose-600 transition-colors shrink-0"
                     >
                       <Check className="w-4 h-4" />
                     </button>

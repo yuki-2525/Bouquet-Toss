@@ -14,7 +14,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    let { displayName } = await request.json();
+    let { displayName, avatarUrl } = await request.json();
 
     if (!displayName) {
       return NextResponse.json({ error: 'Display name is required' }, { status: 400 });
@@ -31,7 +31,10 @@ export async function PATCH(request: Request) {
     // 1. usersテーブルを更新
     const { error: dbError } = await adminSupabase
       .from('users')
-      .update({ display_name: displayName.trim() })
+      .update({ 
+        display_name: displayName.trim(),
+        avatar_url: avatarUrl === undefined ? undefined : avatarUrl 
+      })
       .eq('id', user.id);
 
     if (dbError) throw dbError;
@@ -39,7 +42,10 @@ export async function PATCH(request: Request) {
     // 2. Authのメタデータも更新（AuthContextで反映されるようにするため）
     // updateUser は現在のユーザーセッションが必要なため、通常のクライアントを使用
     const { error: authError } = await supabase.auth.updateUser({
-      data: { display_name: displayName.trim() }
+      data: { 
+        display_name: displayName.trim(),
+        avatar_url: avatarUrl === undefined ? undefined : avatarUrl 
+      }
     });
 
     if (authError) throw authError;
