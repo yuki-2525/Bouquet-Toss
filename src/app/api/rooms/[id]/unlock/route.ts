@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createAdminClient } from '@/backend/db/supabase-server';
+import { createAdminClient, createServerClient } from '@/backend/db/supabase-server';
+import crypto from 'crypto';
 
 /**
  * ルームのパスワード認証を行い、アクセス権を付与する
@@ -10,11 +11,23 @@ export async function POST(
 ) {
   try {
     const { id: roomId } = await params;
-    const { password, userId } = await request.json();
+    const { password } = await request.json();
 
-    if (!password || !userId) {
+    if (!password) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+
+    const supabaseSession = await createServerClient();
+    const { data: { user }, error: authError } = await supabaseSession.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userId = user.id;
+
+    // パスワードのハッシュ化 (SHA-256)
+    const passwordHash = crypto.createHash('sha256').update(password).digest('hex');
 
     const supabase = createAdminClient();
 
@@ -30,7 +43,7 @@ export async function POST(
     }
 
     // パスワード照合
-    if (room.password_hash !== password) {
+    if (room.password_hash !== passwordHash) {
       return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
     }
 

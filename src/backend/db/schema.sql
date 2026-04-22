@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   display_name TEXT NOT NULL,
   avatar_url TEXT,
   is_guest BOOLEAN DEFAULT true,
-  total_bouquets_sent INTEGER DEFAULT 0,
+  total_bouquets_sent BIGINT DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS public.characters (
   user_id UUID REFERENCES public.users(id) ON DELETE CASCADE, -- キャラクターを作成したユーザー（オーナー）
   name TEXT NOT NULL,
   avatar_url TEXT, -- キャラクターの画像URL
-  total_bouquets_received INTEGER DEFAULT 0,
+  total_bouquets_received BIGINT DEFAULT 0,
   sort_order INTEGER DEFAULT 0, -- 表示順（ルーム作成者が変更可能）
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -68,3 +68,12 @@ BEGIN
   END IF;
 END;
 $$ LANGUAGE plpgsql;
+
+-- セキュリティ（RLS）の有効化：フロントエンドからの直接アクセスを禁止し、API経由のみを許可
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.rooms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.characters ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bouquet_logs ENABLE ROW LEVEL SECURITY;
+-- room_access と character_access テーブルが存在する場合はそれらにも適用
+-- ALTER TABLE public.room_access ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.character_access ENABLE ROW LEVEL SECURITY;

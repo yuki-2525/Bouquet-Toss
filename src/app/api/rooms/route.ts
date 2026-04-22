@@ -1,17 +1,20 @@
 import { NextResponse } from 'next/server';
-import { createAdminClient } from '@/backend/db/supabase-server';
+import { createAdminClient, createServerClient } from '@/backend/db/supabase-server';
+import crypto from 'crypto';
 
 /**
  * ユーザーに関連するルーム（作成したルーム ＋ アクセス権を持つルーム）を一覧取得する
  */
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+    const supabaseSession = await createServerClient();
+    const { data: { user }, error: authError } = await supabaseSession.auth.getUser();
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const userId = user.id;
 
     const supabase = createAdminClient();
 
@@ -63,11 +66,23 @@ export async function GET(request: Request) {
  */
 export async function POST(request: Request) {
   try {
-    const { name, password, userId } = await request.json();
+    const { name, password } = await request.json();
 
-    if (!name || !password || !userId) {
+    if (!name || !password) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+
+    const supabaseSession = await createServerClient();
+    const { data: { user }, error: authError } = await supabaseSession.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userId = user.id;
+
+    // パスワードのハッシュ化 (SHA-256)
+    const passwordHash = crypto.createHash('sha256').update(password).digest('hex');
 
     const supabase = createAdminClient();
 
@@ -76,7 +91,7 @@ export async function POST(request: Request) {
       .from('rooms')
       .insert({
         name,
-        password_hash: password,
+        password_hash: passwordHash,
         created_by: userId
       })
       .select()

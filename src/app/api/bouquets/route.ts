@@ -1,20 +1,35 @@
 import { NextResponse } from 'next/server';
-import { createAdminClient } from '@/backend/db/supabase-server';
+import { createAdminClient, createServerClient } from '@/backend/db/supabase-server';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { roomId, characterId, userId, count } = body;
+    const { roomId, characterId, count } = body;
 
-    // バリデーション
-    if (!roomId || !characterId || !userId || typeof count !== 'number') {
+    // 数値型チェック
+    if (!roomId || !characterId || typeof count !== 'number') {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+    }
+
+    // 上限・下限チェック（-1000万 〜 +1000万）
+    if (count < -10000000 || count > 10000000) {
+      return NextResponse.json({ error: 'Count out of range. Max is 10,000,000.' }, { status: 400 });
     }
 
     // 数が0の場合は何もしない
     if (count === 0) {
       return NextResponse.json({ success: true, message: 'Skipped' });
     }
+
+    // IDOR対策: クライアントからのuserIdを信用せず、セッションから取得する
+    const supabaseSession = await createServerClient();
+    const { data: { user }, error: authError } = await supabaseSession.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userId = user.id;
 
     const supabase = createAdminClient();
 

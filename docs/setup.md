@@ -24,16 +24,13 @@
 
 ```env
 # Supabase 設定
-NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 # アプリ設定
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
-
-### ⚠️ デプロイ時の注意点 (Vercel)
-Vercelの管理画面で環境変数を設定する際は、**必ず `NEXT_PUBLIC_` プレフィックスを付けてください。** これがないとフロントエンド側からSupabaseに接続できず、無限ローディングやエラーの原因になります。
 
 ## 3. 起動
 

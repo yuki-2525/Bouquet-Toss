@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createAdminClient } from '@/backend/db/supabase-server';
+import { createAdminClient, createServerClient } from '@/backend/db/supabase-server';
 
 export async function GET(
   request: Request,
@@ -7,9 +7,14 @@ export async function GET(
 ) {
   try {
     const { id: roomId } = await params;
-    // URLから現在のユーザーIDを取得
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+    const supabaseSession = await createServerClient();
+    const { data: { user }, error: authError } = await supabaseSession.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userId = user.id;
 
     const supabase = createAdminClient();
 

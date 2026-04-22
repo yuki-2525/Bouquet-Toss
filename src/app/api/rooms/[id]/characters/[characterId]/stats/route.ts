@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createAdminClient } from '@/backend/db/supabase-server';
+import { createAdminClient, createServerClient } from '@/backend/db/supabase-server';
 
 /**
  * キャラクターごとのブーケ投下内訳（誰から何個もらったか）を取得する
@@ -10,12 +10,14 @@ export async function GET(
 ) {
   try {
     const { id: roomId, characterId } = await params;
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+    const supabaseSession = await createServerClient();
+    const { data: { user }, error: authError } = await supabaseSession.auth.getUser();
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const userId = user.id;
 
     const supabase = createAdminClient();
 

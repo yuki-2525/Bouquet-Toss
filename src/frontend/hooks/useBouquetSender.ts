@@ -34,7 +34,6 @@ export function useBouquetSender(roomId: string, characterId: string, userId: st
         body: JSON.stringify({
           roomId,
           characterId,
-          userId,
           count: countToSend
         })
       });

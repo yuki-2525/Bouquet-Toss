@@ -2,19 +2,13 @@
  * ブラウザ（クライアントコンポーネント）用 Supabase クライアント
  * next/headers などサーバー専用APIは一切importしないこと
  */
-import { createBrowserClient as createSSRBrowserClient, createServerClient as createSSRServerClient } from '@supabase/ssr';
+import { createServerClient as createSSRServerClient } from '@supabase/ssr';
 import type { NextRequest, NextResponse } from 'next/server';
 
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-/**
- * クライアントコンポーネント用 Supabase クライアント
- * セッションをCookieで管理する @supabase/ssr ベース
- */
-export function createBrowserClient() {
-  return createSSRBrowserClient(supabaseUrl, supabaseAnonKey);
-}
+
 
 /**
  * Middleware 専用 Supabase クライアント
