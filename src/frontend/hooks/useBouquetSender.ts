@@ -10,6 +10,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 export function useBouquetSender(roomId: string, characterId: string, userId: string, initialCount: number = 0) {
   const [localCount, setLocalCount] = useState(initialCount);
   const [isSending, setIsSending] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
 
   // サーバーからの初期データロード時に、最新のカウントを反映させる
   useEffect(() => {
@@ -21,7 +22,10 @@ export function useBouquetSender(roomId: string, characterId: string, userId: st
 
   const sendBatch = useCallback(async () => {
     const countToSend = pendingCountRef.current;
-    if (countToSend === 0) return;
+    if (countToSend === 0) {
+      setIsSending(false);
+      return;
+    }
 
     // バッファをリセット
     pendingCountRef.current = 0;
@@ -51,17 +55,27 @@ export function useBouquetSender(roomId: string, characterId: string, userId: st
   }, [roomId, characterId, userId]);
 
   const handleThrow = useCallback((amount: number = 1) => {
+    if (isLocked) return;
+
     // 楽観的UI更新：即座に表示を更新（0未満にはしない）
     setLocalCount(prev => Math.max(0, prev + amount));
 
     // 送信待ちバッファを更新
-    // ※Strict Modeで2回実行されるのを防ぐため、setStateの外で行う
     pendingCountRef.current += amount;
 
-    // 前のタイマーをキャンセルし、2秒間操作がなければAPIに送信する(Debounce)
+    // 前のタイマーをキャンセル
     if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(sendBatch, 2000);
-  }, [sendBatch]);
+
+    // 5000以上の場合は即座に送信し、0.5秒間ロックする
+    if (Math.abs(amount) >= 5000) {
+      sendBatch();
+      setIsLocked(true);
+      setTimeout(() => setIsLocked(false), 500);
+    } else {
+      // それ以外は2秒間操作がなければAPIに送信する(Debounce)
+      timerRef.current = setTimeout(sendBatch, 2000);
+    }
+  }, [sendBatch, isLocked]);
 
   // コンポーネントアンマウント時に残りのバッファがあれば送信
   useEffect(() => {
@@ -72,5 +86,5 @@ export function useBouquetSender(roomId: string, characterId: string, userId: st
     };
   }, [sendBatch]);
 
-  return { localCount, handleThrow, isSending };
+  return { localCount, handleThrow, isSending, isLocked };
 }

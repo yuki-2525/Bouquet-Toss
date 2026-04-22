@@ -43,7 +43,7 @@ export default function ThrowBouquetPage() {
     fetchCharacter();
   }, [roomId, characterId, currentUserId]);
 
-  const { localCount, handleThrow } = useBouquetSender(
+  const { localCount, handleThrow, isLocked } = useBouquetSender(
     roomId,
     characterId,
     currentUserId,
@@ -86,6 +86,7 @@ export default function ThrowBouquetPage() {
           mySentCount={localCount}
           onThrowBouquet={handleThrow}
           isOwner={isOwner}
+          isLocked={isLocked}
         />
       </div>
     </main>

@@ -9,6 +9,7 @@ interface KnightCardProps {
   mySentCount: number;
   onThrowBouquet: (amount: number) => void;
   isOwner?: boolean;
+  isLocked?: boolean;
 }
 
 export function KnightCard({ 
@@ -17,6 +18,7 @@ export function KnightCard({
   mySentCount, 
   onThrowBouquet, 
   isOwner = false,
+  isLocked = false,
 }: KnightCardProps) {
   
   const [customAmount, setCustomAmount] = useState<number>(50);
@@ -79,7 +81,7 @@ export function KnightCard({
           
           {/* メインアクション：+1 連打ボタン (常に表示) */}
           <div className="flex justify-center w-full">
-            <BouquetButton onClick={() => onThrowBouquet(1)} />
+            <BouquetButton onClick={() => onThrowBouquet(1)} disabled={isLocked} />
           </div>
 
           {/* まとめて贈るトグルボタン */}
@@ -101,19 +103,35 @@ export function KnightCard({
                 className="overflow-hidden flex flex-col items-center gap-5 w-full pt-2"
               >
                 <div className="flex flex-wrap justify-center items-center gap-3">
-                  <button onClick={() => onThrowBouquet(-10)} className="w-12 h-12 rounded-full flex justify-center items-center bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors active:scale-95 shadow-sm">
+                  <button 
+                    onClick={() => onThrowBouquet(-10)} 
+                    disabled={isLocked}
+                    className="w-12 h-12 rounded-full flex justify-center items-center bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors active:scale-95 shadow-sm disabled:opacity-50"
+                  >
                     -10
                   </button>
-                  <button onClick={() => onThrowBouquet(-1)} className="w-12 h-12 rounded-full flex justify-center items-center bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors active:scale-95 shadow-sm">
+                  <button 
+                    onClick={() => onThrowBouquet(-1)} 
+                    disabled={isLocked}
+                    className="w-12 h-12 rounded-full flex justify-center items-center bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors active:scale-95 shadow-sm disabled:opacity-50"
+                  >
                     -1
                   </button>
                   
                   <div className="w-px h-8 bg-zinc-300 dark:bg-zinc-700 mx-2" />
                   
-                  <button onClick={() => onThrowBouquet(10)} className="w-12 h-12 rounded-full flex justify-center items-center bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-300 font-bold hover:bg-rose-200 dark:hover:bg-rose-800/60 transition-colors active:scale-95 shadow-sm border border-rose-200 dark:border-rose-800/50">
+                  <button 
+                    onClick={() => onThrowBouquet(10)} 
+                    disabled={isLocked}
+                    className="w-12 h-12 rounded-full flex justify-center items-center bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-300 font-bold hover:bg-rose-200 dark:hover:bg-rose-800/60 transition-colors active:scale-95 shadow-sm border border-rose-200 dark:border-rose-800/50 disabled:opacity-50"
+                  >
                     +10
                   </button>
-                  <button onClick={() => onThrowBouquet(100)} className="w-12 h-12 rounded-full flex justify-center items-center bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-300 font-bold hover:bg-rose-200 dark:hover:bg-rose-800/60 transition-colors active:scale-95 shadow-sm border border-rose-200 dark:border-rose-800/50">
+                  <button 
+                    onClick={() => onThrowBouquet(100)} 
+                    disabled={isLocked}
+                    className="w-12 h-12 rounded-full flex justify-center items-center bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-300 font-bold hover:bg-rose-200 dark:hover:bg-rose-800/60 transition-colors active:scale-95 shadow-sm border border-rose-200 dark:border-rose-800/50 disabled:opacity-50"
+                  >
                     +100
                   </button>
                 </div>
@@ -132,8 +150,9 @@ export function KnightCard({
                     <input 
                       type="number" 
                       min="1"
+                      max="1000000"
                       value={customAmount} 
-                      onChange={(e) => setCustomAmount(Math.max(1, Number(e.target.value)))} 
+                      onChange={(e) => setCustomAmount(Math.min(1000000, Math.max(1, Number(e.target.value))))} 
                       className="w-20 bg-transparent text-center text-xl font-bold text-zinc-900 dark:text-zinc-100 outline-none border-b-2 border-rose-500/50 focus:border-rose-500 transition-colors"
                     />
                     <span className="text-zinc-500 font-medium">本</span>
@@ -141,7 +160,7 @@ export function KnightCard({
 
                   <button 
                     onClick={() => onThrowBouquet(customAmount)} 
-                    disabled={customAmount <= 0}
+                    disabled={customAmount <= 0 || isLocked}
                     className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-rose-500 text-white font-bold hover:from-rose-500 hover:to-rose-400 shadow-md shadow-rose-500/20 transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     +{customAmount || 0}
