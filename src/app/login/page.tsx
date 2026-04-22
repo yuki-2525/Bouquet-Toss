@@ -1,0 +1,185 @@
+"use client";
+
+import { useSearchParams, useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { Flower } from "lucide-react";
+import { useUser } from "@/frontend/contexts/AuthContext";
+
+// Google SVGアイコン
+function GoogleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden="true">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    </svg>
+  );
+}
+
+// Discord SVGアイコン
+function DiscordIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="#5865F2" aria-hidden="true">
+      <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.03.056a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+    </svg>
+  );
+}
+
+// X (Twitter) SVGアイコン
+function XIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.742l7.73-8.835L1.254 2.25H8.08l4.259 5.63L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/>
+    </svg>
+  );
+}
+
+function LoginContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const redirect = searchParams.get("redirect") || "/";
+  const { refreshUser } = useUser();
+
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [guestName, setGuestName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleOAuth = async (provider: "google" | "discord" | "x") => {
+    try {
+      const res = await fetch('/api/auth/login-social', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider }),
+      });
+      
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.error || "Failed to start auth");
+      }
+    } catch (err) {
+      console.error(err);
+      setErrorMessage("認証の開始に失敗しました");
+    }
+  };
+
+  const handleGuest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!guestName.trim()) {
+      setErrorMessage("ゲストとして参加するには名前を入力してください");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/auth/login-guest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ displayName: guestName.trim() }),
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Login failed");
+
+      // セッションを同期
+      await refreshUser();
+      router.push(redirect);
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center p-6">
+      {/* カード */}
+      <div className="w-full max-w-sm rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xl p-8">
+        {/* ロゴ */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-16 h-16 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center mb-4">
+            <Flower className="w-8 h-8 text-rose-500" />
+          </div>
+          <h1 className="text-2xl font-bold font-serif text-zinc-900 dark:text-zinc-100">Bouquet Toss</h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 text-center">
+            {redirect.startsWith("/rooms/") ? "ルームに参加するにはログインしてください" : "続けるにはログインしてください"}
+          </p>
+        </div>
+
+        {/* OAuthボタン群 */}
+        <div className="flex flex-col gap-3">
+          <button
+            onClick={() => handleOAuth("google")}
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-100 font-medium text-sm transition-colors"
+          >
+            <GoogleIcon />
+            Google でログイン
+          </button>
+
+          <button
+            onClick={() => handleOAuth("discord")}
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-100 font-medium text-sm transition-colors"
+          >
+            <DiscordIcon />
+            Discord でログイン
+          </button>
+
+          <button
+            onClick={() => handleOAuth("x")}
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-100 font-medium text-sm transition-colors"
+          >
+            <XIcon />
+            X でログイン
+          </button>
+        </div>
+
+        {/* 区切り */}
+        <div className="flex items-center gap-3 my-6">
+          <div className="flex-1 h-px bg-zinc-100 dark:bg-zinc-800" />
+          <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-widest">or guest</span>
+          <div className="flex-1 h-px bg-zinc-100 dark:bg-zinc-800" />
+        </div>
+
+        {/* ゲストログインフォーム */}
+        <form onSubmit={handleGuest} className="space-y-3">
+          <input
+            type="text"
+            placeholder="表示名を入力 (例: PLステラ)"
+            value={guestName}
+            onChange={(e) => setGuestName(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800 border-none outline-none focus:ring-2 focus:ring-rose-500 text-sm transition-all"
+          />
+          <button
+            type="submit"
+            className="w-full px-4 py-3 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-bold text-sm hover:opacity-90 transition-opacity"
+          >
+            ゲストとして参加する
+          </button>
+        </form>
+
+        {/* エラーメッセージ表示 */}
+        {errorMessage && (
+          <div className="mt-4 p-3 rounded-lg bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 text-[10px] text-rose-600 dark:text-rose-400 text-center">
+            {errorMessage}
+          </div>
+        )}
+
+        <p className="mt-6 text-center text-[10px] text-zinc-400 dark:text-zinc-500 leading-relaxed">
+          ゲストの場合、投下記録は現在のブラウザに保存されます。<br />
+          後からSNSログインに移行することも可能です。
+        </p>
+      </div>
+    </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
+  );
+}
