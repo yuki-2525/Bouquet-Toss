@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createAdminClient, createServerClient } from '@/backend/db/supabase-server';
 
 /**
- * 新しい騎士（キャラクター）を追加する
+ * 新しいキャラ（キャラクター）を追加する
  */
 export async function POST(
   request: Request,

@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { 
-  Flower, Plus, Lock, ArrowRight, Loader2, 
+import {
+  Flower, Plus, Lock, ArrowRight, Loader2,
   LayoutGrid, History, Settings, LogIn, ExternalLink, Hash
 } from "lucide-react";
 import { useUser } from "@/frontend/contexts/AuthContext";
@@ -21,10 +21,10 @@ interface Room {
 export default function RoomsDashboard() {
   const router = useRouter();
   const { user, isLoading: isUserLoading, signOut } = useUser();
-  
+
   const [rooms, setRooms] = useState<Room[]>([]);
   const [isRoomsLoading, setIsRoomsLoading] = useState(true);
-  
+
   const [newName, setNewName] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [allowOwnerManageAll, setAllowOwnerManageAll] = useState(false);
@@ -65,9 +65,9 @@ export default function RoomsDashboard() {
       const res = await fetch("/api/rooms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          name: newName, 
-          password: newPassword, 
+        body: JSON.stringify({
+          name: newName,
+          password: newPassword,
           userId: user.id,
           allowOwnerManageAll,
           allowOwnerViewStats
@@ -154,7 +154,7 @@ export default function RoomsDashboard() {
                 required
                 className="w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800 border-none outline-none focus:ring-2 focus:ring-rose-500 transition-all"
               />
-              
+
               <div className="space-y-3 px-1 py-2">
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <div className="relative flex items-center">
@@ -189,7 +189,7 @@ export default function RoomsDashboard() {
                       部屋主に全キャラの統計閲覧を許可
                     </span>
                     <span className="text-[10px] text-zinc-400">
-                      部屋主が常に全キャラの投下統計を確認できるようになります
+                      部屋主が常に全キャラのブーケ数の統計を確認できるようになります
                     </span>
                   </div>
                 </label>

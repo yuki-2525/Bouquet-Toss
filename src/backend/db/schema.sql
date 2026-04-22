@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS public.rooms (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- public.characters キャラクター（騎士）テーブル
+-- public.characters キャラクター（キャラ）テーブル
 CREATE TABLE IF NOT EXISTS public.characters (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   room_id UUID REFERENCES public.rooms(id) ON DELETE CASCADE,

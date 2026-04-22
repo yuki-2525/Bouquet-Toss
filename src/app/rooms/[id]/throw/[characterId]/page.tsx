@@ -32,7 +32,7 @@ export default function ThrowBouquetPage() {
         
         // この部屋のキャラクター一覧から対象のキャラを探す
         const targetChar = data.characters.find((c: any) => c.id === characterId);
-        if (!targetChar) throw new Error("指定された騎士が見つかりません");
+        if (!targetChar) throw new Error("指定されたキャラが見つかりません");
         
         setCharacter(targetChar);
       } catch (err) {
@@ -76,7 +76,7 @@ export default function ThrowBouquetPage() {
       <div className="w-full max-w-lg">
         <div className="mb-8 text-center">
           <h2 className="text-xl font-bold text-zinc-500 dark:text-zinc-400 mb-2">
-            対象の騎士
+            対象のキャラ
           </h2>
         </div>
         

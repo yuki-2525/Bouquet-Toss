@@ -205,11 +205,11 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        {/* 自分の騎士たち */}
+        {/* 自分のキャラたち */}
         <section>
           <h2 className="text-xl font-bold mb-6 flex items-center gap-2 px-2">
             <Flower className="w-5 h-5 text-rose-500" />
-            あなたが作成した騎士
+            あなたが作成したキャラ
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -253,9 +253,12 @@ export default function ProfilePage() {
               ))
             ) : (
               <div className="col-span-full py-12 text-center bg-white dark:bg-zinc-900 rounded-3xl border border-dashed border-zinc-200 dark:border-zinc-800">
-                <p className="text-zinc-400">まだ騎士を作成していません</p>
-                <Link href="/rooms" className="text-rose-500 text-sm font-bold mt-2 inline-block hover:underline">
-                  ルームに参加して騎士を作成しよう
+                <p className="text-zinc-400">まだキャラを作成していません</p>
+                <Link 
+                  href="/rooms" 
+                  className="mt-2 text-sm font-bold text-rose-500 hover:underline"
+                >
+                  ルームに参加してキャラを作成しよう
                 </Link>
               </div>
             )}

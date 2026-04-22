@@ -214,7 +214,7 @@ function SortableCharacterItem({
                 </Link>
               )}
               <span className="text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block">
-                投下画面へ
+                ブーケを投げる
               </span>
               <ArrowRight className="w-5 h-5" />
             </div>
@@ -270,7 +270,7 @@ export default function RoomPage() {
           return;
         }
         if (!res.ok) throw new Error('ルームが見つかりません');
-        
+
         const data = await res.json();
         setRoomData(data);
         setEditableChars(data.characters);
@@ -286,19 +286,19 @@ export default function RoomPage() {
 
     // 3. リアルタイム更新（SSE）の開始
     const eventSource = new EventSource(`/api/rooms/${roomId}/events`);
-    
+
     eventSource.onmessage = (event) => {
       try {
         const { type, data } = JSON.parse(event.data);
-        
+
         if (type === 'CHARACTER_UPDATE') {
           setRoomData(prev => {
             if (!prev) return prev;
             return {
               ...prev,
-              characters: prev.characters.map(c => 
-                c.id === data.id 
-                  ? { ...c, totalBouquets: data.total_bouquets_received } 
+              characters: prev.characters.map(c =>
+                c.id === data.id
+                  ? { ...c, totalBouquets: data.total_bouquets_received }
                   : c
               )
             };
@@ -424,13 +424,13 @@ export default function RoomPage() {
       });
 
       if (!res.ok) throw new Error("更新に失敗しました");
-      
+
       const updatedChar = await res.json();
       setRoomData(prev => prev ? {
         ...prev,
         characters: prev.characters.map(c => c.id === editingCharacter.id ? { ...c, name: updatedChar.name } : c)
       } : prev);
-      
+
       setEditingCharacter(null);
     } catch (err) {
       alert("更新に失敗しました");
@@ -448,7 +448,7 @@ export default function RoomPage() {
       });
 
       if (!res.ok) throw new Error("削除に失敗しました");
-      
+
       setRoomData(prev => prev ? {
         ...prev,
         characters: prev.characters.filter(c => c.id !== char.id)
@@ -496,7 +496,7 @@ export default function RoomPage() {
       });
 
       if (!res.ok) throw new Error("更新に失敗しました");
-      
+
       const updatedRoom = await res.json();
       setRoomData(prev => prev ? {
         ...prev,
@@ -504,7 +504,7 @@ export default function RoomPage() {
         allowOwnerManageAll: updatedRoom.allow_owner_manage_all,
         allowOwnerViewStats: updatedRoom.allow_owner_view_stats
       } : prev);
-      
+
       setIsRoomSettingsOpen(false);
     } catch (err) {
       alert("更新に失敗しました");
@@ -531,13 +531,13 @@ export default function RoomPage() {
       });
 
       if (!res.ok) throw new Error("追加に失敗しました");
-      
+
       const newChar = await res.json();
       setRoomData(prev => prev ? {
         ...prev,
         characters: [...prev.characters, newChar]
       } : prev);
-      
+
       setIsAdding(false);
       setNewCharName("");
       setNewAvatarUrl1("");
@@ -574,8 +574,8 @@ export default function RoomPage() {
     <main className="container mx-auto px-4 py-12 min-h-screen relative pb-32">
       {/* 戻る導線 */}
       <div className="max-w-3xl mx-auto mb-8">
-        <Link 
-          href="/rooms" 
+        <Link
+          href="/rooms"
           className="inline-flex items-center gap-2 text-sm font-bold text-zinc-400 hover:text-rose-500 transition-colors group"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
@@ -591,7 +591,7 @@ export default function RoomPage() {
               ? "ドラッグして並び替えてください"
               : "このセッションに登場するキャラたちです。クリックしてブーケを贈りましょう。"}
           </p>
-          
+
           {!isEditMode && (
             <div className="flex flex-col items-center gap-4">
               <button
@@ -617,39 +617,39 @@ export default function RoomPage() {
                 )}
 
                 {/* 参加メンバー一覧 */}
-                <button 
+                <button
                   onClick={() => setIsMemberListOpen(true)}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors group/members"
                 >
-                <div className="flex -space-x-2 overflow-hidden">
-                  {(roomData.members || []).slice(0, 5).map((member) => (
-                    <div
-                      key={member.id}
-                      className="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-zinc-900 bg-zinc-100 dark:bg-zinc-800 overflow-hidden"
-                      title={member.name}
-                    >
-                      {member.avatarUrl ? (
-                        <img src={member.avatarUrl} alt={member.name} className="h-full w-full object-cover" />
-                      ) : (
-                        <div className="h-full w-full flex items-center justify-center text-[10px] font-bold text-zinc-400">
-                          {member.name ? member.name[0] : "?"}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  {(roomData.members?.length || 0) > 5 && (
-                    <div className="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-zinc-900 bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-[10px] font-bold text-zinc-500">
-                      +{(roomData.members?.length || 0) - 5}
-                    </div>
-                  )}
-                </div>
-                <span className="text-xs text-zinc-400 font-bold ml-1 group-hover/members:text-rose-500 transition-colors">
-                  {(roomData.members?.length || 0)} 人が参加中
-                </span>
-              </button>
+                  <div className="flex -space-x-2 overflow-hidden">
+                    {(roomData.members || []).slice(0, 5).map((member) => (
+                      <div
+                        key={member.id}
+                        className="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-zinc-900 bg-zinc-100 dark:bg-zinc-800 overflow-hidden"
+                        title={member.name}
+                      >
+                        {member.avatarUrl ? (
+                          <img src={member.avatarUrl} alt={member.name} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="h-full w-full flex items-center justify-center text-[10px] font-bold text-zinc-400">
+                            {member.name ? member.name[0] : "?"}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {(roomData.members?.length || 0) > 5 && (
+                      <div className="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-zinc-900 bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-[10px] font-bold text-zinc-500">
+                        +{(roomData.members?.length || 0) - 5}
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-xs text-zinc-400 font-bold ml-1 group-hover/members:text-rose-500 transition-colors">
+                    {(roomData.members?.length || 0)} 人が参加中
+                  </span>
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
         </div>
       </div>
 
@@ -675,7 +675,7 @@ export default function RoomPage() {
                   <Users className="w-5 h-5 text-rose-500" />
                   <h2 className="text-xl font-bold">参加中のユーザー</h2>
                 </div>
-                <button 
+                <button
                   onClick={() => setIsMemberListOpen(false)}
                   className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors"
                 >
@@ -684,7 +684,7 @@ export default function RoomPage() {
               </div>
               <div className="max-h-[60vh] overflow-y-auto p-4 space-y-2">
                 {(roomData.members || []).map((member) => (
-                  <div 
+                  <div
                     key={member.id}
                     className="flex items-center gap-4 p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-transparent hover:border-rose-200 dark:hover:border-rose-900/30 transition-all"
                   >
@@ -796,7 +796,7 @@ export default function RoomPage() {
             ))
           )}
 
-          {/* 騎士追加カード (全員に表示) */}
+          {/* キャラ追加カード (全員に表示) */}
           {!isEditMode && (
             <div className="mt-4">
               {isAdding ? (
@@ -897,7 +897,7 @@ export default function RoomPage() {
                     <Settings className="w-5 h-5 text-rose-500" />
                     <h2 className="text-xl font-bold">キャラクター設定</h2>
                   </div>
-                  <button 
+                  <button
                     type="button"
                     onClick={() => setEditingCharacter(null)}
                     className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors"
@@ -905,7 +905,7 @@ export default function RoomPage() {
                     <X className="w-5 h-5" />
                   </button>
                 </div>
-                
+
                 <div className="p-6 space-y-4">
                   <div className="text-left">
                     <label className="block text-xs font-bold text-zinc-400 uppercase mb-2 ml-1">キャラの名前</label>
@@ -965,7 +965,7 @@ export default function RoomPage() {
                     <Settings className="w-5 h-5 text-rose-500" />
                     <h2 className="text-xl font-bold">ルーム設定</h2>
                   </div>
-                  <button 
+                  <button
                     type="button"
                     onClick={() => setIsRoomSettingsOpen(false)}
                     className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors"
@@ -973,7 +973,7 @@ export default function RoomPage() {
                     <X className="w-5 h-5" />
                   </button>
                 </div>
-                
+
                 <div className="p-6 space-y-6">
                   <div className="text-left">
                     <label className="block text-xs font-bold text-zinc-400 uppercase mb-2 ml-1">ルーム名</label>
@@ -1016,7 +1016,7 @@ export default function RoomPage() {
                           部屋主に全キャラの統計閲覧を許可
                         </span>
                         <span className="text-[10px] text-zinc-400">
-                          部屋主が常に全キャラの投下統計を確認できるようになります
+                          部屋主が常に全キャラのブーケ数の統計を確認できるようになります
                         </span>
                       </div>
                     </label>
