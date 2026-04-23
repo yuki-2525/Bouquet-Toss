@@ -482,6 +482,7 @@ export default function RoomPage() {
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [copiedCss, setCopiedCss] = useState(false);
   const [isUpdatingRoom, setIsUpdatingRoom] = useState(false);
+  const [isOverlaySettingsOpen, setIsOverlaySettingsOpen] = useState(false);
 
   useEffect(() => {
     if (roomData) {
@@ -1053,105 +1054,126 @@ ${overlayConfig.hideName ? '.char-name { display: none !important; }\n' : ''}${o
 
                   {/* オーバーレイ設定セクション */}
                   {roomAllowViewStats && roomData?.overlayToken && (
-                    <div className="pt-6 border-t border-zinc-100 dark:border-zinc-800 space-y-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <ExternalLink className="w-4 h-4 text-rose-500" />
-                        <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-100">配信用オーバーレイ設定</h3>
-                      </div>
-
-                      <div className="space-y-3 bg-rose-50/50 dark:bg-rose-900/10 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/20">
-                        <div className="flex flex-col gap-2">
-                          <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400">オーバーレイURL (OBSブラウザソース用)</label>
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              readOnly
-                              value={`${typeof window !== 'undefined' ? window.location.origin : ''}/rooms/${roomId}/overlay?token=${roomData.overlayToken}`}
-                              className="flex-1 px-3 py-2 text-xs rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 outline-none"
-                            />
-                            <button
-                              type="button"
-                              onClick={handleCopyOverlayUrl}
-                              className="p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:text-rose-500 transition-colors"
-                            >
-                              {copiedUrl ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                            </button>
-                          </div>
+                    <div className="pt-6 border-t border-zinc-100 dark:border-zinc-800">
+                      <button
+                        type="button"
+                        onClick={() => setIsOverlaySettingsOpen(!isOverlaySettingsOpen)}
+                        className="flex items-center justify-between w-full p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors group"
+                      >
+                        <div className="flex items-center gap-2">
+                          <ExternalLink className="w-4 h-4 text-rose-500" />
+                          <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-100 group-hover:text-rose-500">配信用オーバーレイ設定</h3>
                         </div>
+                        <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform duration-300 ${isOverlaySettingsOpen ? "rotate-180" : ""}`} />
+                      </button>
 
-                        <div className="grid grid-cols-2 gap-3 pt-2">
-                          <label className="flex items-center gap-2 cursor-pointer group">
-                            <input
-                              type="checkbox"
-                              checked={overlayConfig.hideName}
-                              onChange={e => setOverlayConfig({...overlayConfig, hideName: e.target.checked})}
-                              className="w-4 h-4 rounded text-rose-500 focus:ring-rose-500"
-                            />
-                            <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 group-hover:text-rose-500">名前を隠す</span>
-                          </label>
-                          <label className="flex items-center gap-2 cursor-pointer group">
-                            <input
-                              type="checkbox"
-                              checked={overlayConfig.hideCount}
-                              onChange={e => setOverlayConfig({...overlayConfig, hideCount: e.target.checked})}
-                              className="w-4 h-4 rounded text-rose-500 focus:ring-rose-500"
-                            />
-                            <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 group-hover:text-rose-500">数値を隠す</span>
-                          </label>
-                          <label className="flex items-center gap-2 cursor-pointer group">
-                            <input
-                              type="checkbox"
-                              checked={overlayConfig.hideImages}
-                              onChange={e => setOverlayConfig({...overlayConfig, hideImages: e.target.checked})}
-                              className="w-4 h-4 rounded text-rose-500 focus:ring-rose-500"
-                            />
-                            <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 group-hover:text-rose-500">画像を隠す</span>
-                          </label>
-                        </div>
+                      <AnimatePresence>
+                        {isOverlaySettingsOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="space-y-4 pt-4">
+                              <div className="space-y-3 bg-rose-50/50 dark:bg-rose-900/10 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/20">
+                                <div className="flex flex-col gap-2">
+                                  <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400">オーバーレイURL (OBSブラウザソース用)</label>
+                                  <div className="flex gap-2">
+                                    <input
+                                      type="text"
+                                      readOnly
+                                      value={`${typeof window !== 'undefined' ? window.location.origin : ''}/rooms/${roomId}/overlay?token=${roomData.overlayToken}`}
+                                      className="flex-1 px-3 py-2 text-xs rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 outline-none"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={handleCopyOverlayUrl}
+                                      className="p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:text-rose-500 transition-colors"
+                                    >
+                                      {copiedUrl ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                                    </button>
+                                  </div>
+                                </div>
 
-                        <div className="pt-2">
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2">表示するキャラを選択</label>
-                          <div className="flex flex-wrap gap-2">
-                            {roomData.characters.map(char => (
-                              <button
-                                key={char.id}
-                                type="button"
-                                onClick={() => {
-                                  const hidden = overlayConfig.hiddenCharIds.includes(char.id)
-                                    ? overlayConfig.hiddenCharIds.filter(id => id !== char.id)
-                                    : [...overlayConfig.hiddenCharIds, char.id];
-                                  setOverlayConfig({...overlayConfig, hiddenCharIds: hidden});
-                                }}
-                                className={`px-2 py-1 rounded-md text-[10px] font-bold transition-all ${
-                                  !overlayConfig.hiddenCharIds.includes(char.id)
-                                    ? 'bg-rose-500 text-white shadow-sm'
-                                    : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500'
-                                }`}
-                              >
-                                {char.name}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
+                                <div className="grid grid-cols-2 gap-3 pt-2">
+                                  <label className="flex items-center gap-2 cursor-pointer group">
+                                    <input
+                                      type="checkbox"
+                                      checked={overlayConfig.hideName}
+                                      onChange={e => setOverlayConfig({...overlayConfig, hideName: e.target.checked})}
+                                      className="w-4 h-4 rounded text-rose-500 focus:ring-rose-500"
+                                    />
+                                    <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 group-hover:text-rose-500">名前を隠す</span>
+                                  </label>
+                                  <label className="flex items-center gap-2 cursor-pointer group">
+                                    <input
+                                      type="checkbox"
+                                      checked={overlayConfig.hideCount}
+                                      onChange={e => setOverlayConfig({...overlayConfig, hideCount: e.target.checked})}
+                                      className="w-4 h-4 rounded text-rose-500 focus:ring-rose-500"
+                                    />
+                                    <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 group-hover:text-rose-500">数値を隠す</span>
+                                  </label>
+                                  <label className="flex items-center gap-2 cursor-pointer group">
+                                    <input
+                                      type="checkbox"
+                                      checked={overlayConfig.hideImages}
+                                      onChange={e => setOverlayConfig({...overlayConfig, hideImages: e.target.checked})}
+                                      className="w-4 h-4 rounded text-rose-500 focus:ring-rose-500"
+                                    />
+                                    <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 group-hover:text-rose-500">画像を隠す</span>
+                                  </label>
+                                </div>
 
-                        <div className="pt-3">
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2">カスタムCSS (OBSの「カスタムCSS」に貼付け)</label>
-                          <div className="relative">
-                            <textarea
-                              readOnly
-                              value={generatedCss}
-                              className="w-full h-20 px-3 py-2 text-[10px] font-mono rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 outline-none resize-none"
-                            />
-                            <button
-                              type="button"
-                              onClick={handleCopyCss}
-                              className="absolute right-2 top-2 p-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-md hover:text-rose-500 transition-colors"
-                            >
-                              {copiedCss ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
+                                <div className="pt-2">
+                                  <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2">表示するキャラを選択</label>
+                                  <div className="flex flex-wrap gap-2">
+                                    {roomData.characters.map(char => (
+                                      <button
+                                        key={char.id}
+                                        type="button"
+                                        onClick={() => {
+                                          const hidden = overlayConfig.hiddenCharIds.includes(char.id)
+                                            ? overlayConfig.hiddenCharIds.filter(id => id !== char.id)
+                                            : [...overlayConfig.hiddenCharIds, char.id];
+                                          setOverlayConfig({...overlayConfig, hiddenCharIds: hidden});
+                                        }}
+                                        className={`px-2 py-1 rounded-md text-[10px] font-bold transition-all ${
+                                          !overlayConfig.hiddenCharIds.includes(char.id)
+                                            ? 'bg-rose-500 text-white shadow-sm'
+                                            : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500'
+                                        }`}
+                                      >
+                                        {char.name}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                <div className="pt-3">
+                                  <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2">カスタムCSS (OBSの「カスタムCSS」に貼付け)</label>
+                                  <div className="relative">
+                                    <textarea
+                                      readOnly
+                                      value={generatedCss}
+                                      className="w-full h-20 px-3 py-2 text-[10px] font-mono rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 outline-none resize-none"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={handleCopyCss}
+                                      className="absolute right-2 top-2 p-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-md hover:text-rose-500 transition-colors"
+                                    >
+                                      {copiedCss ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   )}
                 </div>
