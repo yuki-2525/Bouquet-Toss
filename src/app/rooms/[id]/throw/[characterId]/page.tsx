@@ -63,7 +63,7 @@ export default function ThrowBouquetPage() {
   return (
     <main className="flex flex-col items-center justify-center min-h-screen p-4">
       {/* 戻るボタン */}
-      <div className="absolute top-8 left-8">
+      <div className="w-full max-w-lg mb-8">
         <button 
           onClick={() => router.back()}
           className="flex items-center gap-2 text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"

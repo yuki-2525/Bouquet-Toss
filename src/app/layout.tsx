@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
-import { ThemeToggle } from "@/frontend/components/ThemeToggle";
-import { UserMenu } from "@/frontend/components/UserMenu";
+import { ClientLayout } from "./ClientLayout";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,11 +43,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100`}
       >
         <Providers>
-          <header className="fixed top-0 right-0 z-50 flex items-center gap-3 p-4">
-            <UserMenu />
-            <ThemeToggle />
-          </header>
-          {children}
+          <ClientLayout>
+            {children}
+          </ClientLayout>
         </Providers>
       </body>
     </html>
