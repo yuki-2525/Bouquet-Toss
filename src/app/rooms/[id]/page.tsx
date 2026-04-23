@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Flower, Plus, ArrowRight, GripVertical, CheckCircle2, XCircle, Pencil, Share2, Copy, Check, TrendingUp, ArrowLeft, Users, X, Loader2, MoreVertical, Trash2, Settings, ExternalLink } from "lucide-react";
+import { Flower, Plus, ArrowRight, GripVertical, CheckCircle2, XCircle, Pencil, Share2, Copy, Check, TrendingUp, ArrowLeft, Users, X, Loader2, MoreVertical, Trash2, Settings, ExternalLink, ChevronDown } from "lucide-react";
 import { useUser } from "@/frontend/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
