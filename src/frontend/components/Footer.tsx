@@ -7,7 +7,7 @@ import { GitHubIcon } from "./icons/SocialIcons";
 
 export function Footer() {
   const pathname = usePathname();
-  
+
   // オーバーレイページではフッターを表示しない
   if (pathname?.includes("/overlay")) {
     return null;
@@ -22,7 +22,7 @@ export function Footer() {
             <span className="text-xl font-serif font-black tracking-tight text-zinc-900 dark:text-zinc-100">Bouquet-Toss</span>
           </div>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            ブーケを投げて応援の気持ちを形にするwebアプリ
+            ブーケを投げるwebアプリ
           </p>
         </div>
 
