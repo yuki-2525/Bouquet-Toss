@@ -87,7 +87,11 @@ export default function ProfilePage() {
   };
 
   const handleLogout = async () => {
-    if (confirm("ログアウトしますか？")) {
+    const message = user?.isGuest 
+      ? "ゲストアカウントからログアウトすると、二度とこのアカウントでログインできなくなります。よろしいですか？"
+      : "ログアウトしますか？";
+      
+    if (confirm(message)) {
       await signOut();
       // AuthContext.signOut 内でトップへ遷移するように設定済み
     }

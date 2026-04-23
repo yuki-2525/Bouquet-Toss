@@ -105,7 +105,11 @@ export default function RoomsDashboard() {
   };
 
   const handleLogout = async () => {
-    if (confirm("ログアウトしますか？")) {
+    const message = user?.isGuest 
+      ? "ゲストアカウントからログアウトすると、二度とこのアカウントでログインできなくなります。よろしいですか？"
+      : "ログアウトしますか？";
+      
+    if (confirm(message)) {
       await signOut();
     }
   };

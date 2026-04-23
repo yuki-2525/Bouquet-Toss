@@ -157,7 +157,18 @@ export function UserMenu() {
             </Link>
             <div className="h-px bg-zinc-100 dark:bg-zinc-800 my-1" />
             <button
-              onClick={async () => { setIsOpen(false); await signOut(); }}
+              onClick={async () => {
+                setIsOpen(false);
+                if (user?.isGuest) {
+                  if (confirm("ゲストアカウントからログアウトすると、二度とこのアカウントでログインできなくなります。よろしいですか？")) {
+                    await signOut();
+                  }
+                } else {
+                  if (confirm("ログアウトしますか？")) {
+                    await signOut();
+                  }
+                }
+              }}
               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors"
             >
               <LogOut className="w-4 h-4" />
