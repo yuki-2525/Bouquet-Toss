@@ -79,6 +79,7 @@ export async function GET(
           'broadcast',
           { event: 'CHARACTER_UPDATE' },
           (payload) => {
+            if (!payload?.payload) return;
             const charId = payload.payload.id;
             const safeData = { ...payload.payload };
             
@@ -94,6 +95,7 @@ export async function GET(
           'broadcast',
           { event: 'STELLA_BATTLE_START' },
           (payload) => {
+            if (!payload?.payload) return;
             sendEvent({ type: 'STELLA_BATTLE_START', data: payload.payload });
           }
         )
@@ -101,6 +103,7 @@ export async function GET(
           'broadcast',
           { event: 'STELLA_BATTLE_UPDATE' },
           (payload) => {
+            if (!payload?.payload) return;
             sendEvent({ type: 'STELLA_BATTLE_UPDATE', data: payload.payload });
           }
         )
@@ -108,6 +111,7 @@ export async function GET(
           'broadcast',
           { event: 'STELLA_BATTLE_END' },
           (payload) => {
+            if (!payload?.payload) return;
             sendEvent({ type: 'STELLA_BATTLE_END', data: payload.payload });
           }
         )
@@ -156,6 +160,7 @@ export async function GET(
             filter: `room_id=eq.${roomId}`,
           },
           (payload) => {
+            if (!payload?.new) return;
             const charId = payload.new.id;
             const safeData = { ...payload.new };
             
