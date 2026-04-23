@@ -1344,7 +1344,10 @@ ${overlayConfig.hideName ? '.char-name { display: none !important; }\n' : ''}${o
                     <input
                       type="number"
                       value={stellaBattleCoefficient}
-                      onChange={(e) => setStellaBattleCoefficient(Number(e.target.value))}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setStellaBattleCoefficient(val > 10000 ? 10000 : val);
+                      }}
                       className="w-32 px-4 py-3 text-2xl font-black text-center rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 outline-none focus:ring-4 focus:ring-rose-500/20 transition-all"
                     />
                     <span className="text-2xl font-black text-zinc-800 dark:text-zinc-100">%</span>
