@@ -229,7 +229,9 @@ function SortableCharacterItem({
                 </Link>
               )}
               <span className="text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block">
-                ブーケを投げる
+                {isStellaBattleActive 
+                  ? (isOwner ? "ステラバトルに参戦" : "バトル開催中") 
+                  : "ブーケを投げる"}
               </span>
               <ArrowRight className="w-5 h-5" />
             </div>

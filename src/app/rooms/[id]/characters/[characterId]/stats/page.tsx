@@ -64,6 +64,10 @@ export default function CharacterStatsPage() {
         if (!res.ok) throw new Error("データの取得に失敗しました");
         
         const data = await res.json();
+        if (data.stellaBattleActive) {
+          router.push(`/rooms/${roomId}`);
+          return;
+        }
         setRoomName(data.name);
         
         const char = data.characters.find((c: any) => c.id === characterId);

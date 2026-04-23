@@ -30,10 +30,14 @@ export default function ThrowBouquetPage() {
         if (!res.ok) throw new Error("データの取得に失敗しました");
         const data = await res.json();
         
-        // この部屋のキャラクター一覧から対象のキャラを探す
         const targetChar = data.characters.find((c: any) => c.id === characterId);
         if (!targetChar) throw new Error("指定されたキャラが見つかりません");
-        
+
+        if (data.stellaBattleActive) {
+          router.push(`/rooms/${roomId}`);
+          return;
+        }
+
         setCharacter(targetChar);
       } catch (err) {
         console.error(err);
