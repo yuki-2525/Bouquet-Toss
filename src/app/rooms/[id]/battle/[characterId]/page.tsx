@@ -36,6 +36,8 @@ export default function StellaBattlePage() {
   const [plusValue, setPlusValue] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [lastAction, setLastAction] = useState<'none' | 'plus' | 'minus'>('none');
 
   useEffect(() => {
     if (!currentUserId || !roomId || !characterId) return;
@@ -75,6 +77,9 @@ export default function StellaBattlePage() {
       try {
         const { type, data } = JSON.parse(event.data);
         if (type === 'STELLA_BATTLE_UPDATE') {
+          if (data.id === characterId) {
+            setIsUpdating(false);
+          }
           setRoomData(prev => {
             if (!prev) return prev;
             return {
@@ -99,15 +104,29 @@ export default function StellaBattlePage() {
   }, [roomId, characterId, currentUserId, router]);
 
   const handleUpdateBouquets = async (amount: number) => {
+    // 減少時は楽観的UI更新とロック
+    if (amount < 0) {
+      setIsUpdating(true);
+      setLastAction('minus');
+      setCharacter(prev => prev ? { ...prev, stellaBattleBouquets: Math.max(0, prev.stellaBattleBouquets + amount) } : prev);
+    } else {
+      setLastAction('plus');
+    }
+
     try {
       const res = await fetch(`/api/rooms/${roomId}/stella-battle/bouquets`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ characterId, amount }),
       });
-      if (!res.ok) throw new Error('更新に失敗しました');
+      if (!res.ok) {
+        // 失敗時は再取得して整合性を取る
+        setIsUpdating(false);
+        throw new Error('更新に失敗しました');
+      }
     } catch (err) {
       console.error(err);
+      // ロールバック的な処理が必要な場合はここでfetchDataを呼ぶなどの対応
     }
   };
 
@@ -152,9 +171,15 @@ export default function StellaBattlePage() {
             {/* カウント表示 */}
             <div className="text-center space-y-2">
               <p className="text-sm font-black text-zinc-400 uppercase tracking-widest">現在のステラブーケ数</p>
-              <div className="text-8xl font-black font-serif text-rose-500 tabular-nums tracking-tighter">
+              <motion.div 
+                key={character.stellaBattleBouquets}
+                initial={lastAction === 'minus' ? { scale: 1.2, color: '#ef4444' } : { scale: 1.1, color: '#10b981' }}
+                animate={{ scale: 1, color: '#f43f5e' }}
+                transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                className="text-8xl font-black font-serif tabular-nums tracking-tighter"
+              >
                 {character.stellaBattleBouquets?.toLocaleString() || 0}
-              </div>
+              </motion.div>
             </div>
 
             {/* 操作ツールボックス */}
@@ -166,7 +191,8 @@ export default function StellaBattlePage() {
                     <button
                       key={m}
                       onClick={() => setMultiplier(m)}
-                      className={`w-12 h-12 rounded-xl text-lg font-black transition-all ${multiplier === m ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30' : 'text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20'}`}
+                      disabled={isUpdating}
+                      className={`w-12 h-12 rounded-xl text-lg font-black transition-all ${multiplier === m ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30' : 'text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20'} disabled:opacity-50`}
                     >
                       x{m}
                     </button>
@@ -179,10 +205,16 @@ export default function StellaBattlePage() {
                   <button
                     key={val}
                     onClick={() => handleUpdateBouquets(-(val * multiplier))}
-                    className="group relative overflow-hidden py-6 rounded-2xl bg-zinc-800 text-white font-black hover:bg-zinc-700 transition-all active:scale-95 shadow-xl"
+                    disabled={isUpdating}
+                    className="group relative overflow-hidden py-6 rounded-2xl bg-zinc-800 text-white font-black hover:bg-zinc-700 transition-all active:scale-95 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span className="relative z-10 text-2xl">-{val * multiplier}</span>
                     <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    {isUpdating && (
+                      <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 animate-spin" />
+                      </div>
+                    )}
                   </button>
                 ))}
               </div>
@@ -193,8 +225,9 @@ export default function StellaBattlePage() {
                     type="number"
                     value={plusValue}
                     onChange={(e) => setPlusValue(e.target.value)}
+                    disabled={isUpdating}
                     placeholder="数値を入力して増やす"
-                    className="w-full pl-12 pr-4 py-4 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 font-bold text-lg outline-none focus:ring-2 focus:ring-rose-500 transition-all"
+                    className="w-full pl-12 pr-4 py-4 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 font-bold text-lg outline-none focus:ring-2 focus:ring-rose-500 transition-all disabled:opacity-50"
                   />
                   <Plus className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" />
                 </div>
@@ -206,7 +239,8 @@ export default function StellaBattlePage() {
                       setPlusValue("");
                     }
                   }}
-                  className="px-8 py-4 bg-rose-500 text-white font-black rounded-2xl shadow-lg shadow-rose-500/30 hover:bg-rose-600 active:scale-95 transition-all"
+                  disabled={isUpdating}
+                  className="px-8 py-4 bg-rose-500 text-white font-black rounded-2xl shadow-lg shadow-rose-500/30 hover:bg-rose-600 active:scale-95 transition-all disabled:opacity-50"
                 >
                   追加
                 </button>
