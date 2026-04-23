@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS public.rooms (
   created_by UUID REFERENCES public.users(id),
   allow_owner_manage_all BOOLEAN DEFAULT false,
   allow_owner_view_stats BOOLEAN DEFAULT true,
+  overlay_token UUID DEFAULT uuid_generate_v4(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

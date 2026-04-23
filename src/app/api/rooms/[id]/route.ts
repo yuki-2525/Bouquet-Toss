@@ -115,12 +115,15 @@ export async function GET(
       };
     });
 
+    const isRoomOwner = room.created_by === userId;
+
     return NextResponse.json({
       id: room.id,
       name: room.name,
       createdBy: room.created_by,
       allowOwnerManageAll: !!room.allow_owner_manage_all,
       allowOwnerViewStats: room.allow_owner_view_stats !== false, // default true
+      overlayToken: isRoomOwner ? room.overlay_token : null,
       characters: formattedCharacters,
       members: formattedMembers
     });
