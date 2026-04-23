@@ -3,11 +3,11 @@ import { createAdminClient } from '@/backend/db/supabase-server';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: roomId } = await params;
   const { searchParams } = new URL(request.url);
   const token = searchParams.get('token');
-  const roomId = params.id;
 
   if (!token) {
     return NextResponse.json({ error: 'Token is required' }, { status: 401 });
