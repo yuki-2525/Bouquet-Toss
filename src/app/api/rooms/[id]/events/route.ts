@@ -90,6 +90,27 @@ export async function GET(
             sendEvent({ type: 'CHARACTER_UPDATE', data: safeData });
           }
         )
+        .on(
+          'broadcast',
+          { event: 'STELLA_BATTLE_START' },
+          (payload) => {
+            sendEvent({ type: 'STELLA_BATTLE_START', data: payload.payload });
+          }
+        )
+        .on(
+          'broadcast',
+          { event: 'STELLA_BATTLE_UPDATE' },
+          (payload) => {
+            sendEvent({ type: 'STELLA_BATTLE_UPDATE', data: payload.payload });
+          }
+        )
+        .on(
+          'broadcast',
+          { event: 'STELLA_BATTLE_END' },
+          (payload) => {
+            sendEvent({ type: 'STELLA_BATTLE_END', data: payload.payload });
+          }
+        )
         .subscribe();
 
       // 2. ブーケ投下ログを監視（バックアップ用の監視）

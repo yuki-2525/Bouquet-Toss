@@ -127,6 +127,8 @@ export default function CharacterStatsPage() {
               if (bData.breakdown) setBreakdown(bData.breakdown);
             })
             .catch(err => console.error("Failed to refresh breakdown:", err));
+        } else if (type === 'STELLA_BATTLE_START') {
+          router.push(`/rooms/${roomId}`);
         }
       } catch (err) {
         console.error("SSE parse error:", err);

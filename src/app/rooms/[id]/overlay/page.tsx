@@ -9,6 +9,7 @@ interface Character {
   name: string;
   avatarUrl: string | null;
   totalBouquets: number;
+  stellaBattleBouquets: number;
 }
 
 export default function OverlayPage() {
@@ -22,6 +23,7 @@ export default function OverlayPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdatedId, setLastUpdatedId] = useState<string | null>(null);
+  const [isStellaBattleActive, setIsStellaBattleActive] = useState(false);
 
   useEffect(() => {
     if (!roomId || !token) {
@@ -40,6 +42,7 @@ export default function OverlayPage() {
         const data = await res.json();
         setCharacters(data.characters);
         setRoomName(data.room.name);
+        setIsStellaBattleActive(!!data.stellaBattleActive);
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -58,11 +61,25 @@ export default function OverlayPage() {
         if (type === 'CHARACTER_UPDATE') {
           setCharacters(prev => prev.map(c => 
             c.id === data.id 
-              ? { ...c, totalBouquets: data.total_bouquets_received } 
+              ? { ...c, totalBouquets: data.total_bouquets_received, stellaBattleBouquets: data.stella_battle_bouquets } 
+              : c
+          ));
+          if (!isStellaBattleActive) {
+            setLastUpdatedId(data.id);
+            setTimeout(() => setLastUpdatedId(null), 1000);
+          }
+        } else if (type === 'STELLA_BATTLE_START') {
+          setIsStellaBattleActive(true);
+        } else if (type === 'STELLA_BATTLE_UPDATE') {
+          setCharacters(prev => prev.map(c =>
+            c.id === data.id
+              ? { ...c, stellaBattleBouquets: data.stella_battle_bouquets }
               : c
           ));
           setLastUpdatedId(data.id);
           setTimeout(() => setLastUpdatedId(null), 1000);
+        } else if (type === 'STELLA_BATTLE_END') {
+          setIsStellaBattleActive(false);
         }
       } catch (err) {
         console.error("SSE parse error:", err);
@@ -115,14 +132,16 @@ export default function OverlayPage() {
                 </div>
                 <div className="char-count-wrapper flex items-baseline gap-1">
                   <motion.span 
-                    key={char.totalBouquets}
+                    key={isStellaBattleActive ? char.stellaBattleBouquets : char.totalBouquets}
                     animate={lastUpdatedId === char.id ? { scale: [1, 1.2, 1], color: ["#fb7185", "#f43f5e", "#fb7185"] } : {}}
                     transition={{ duration: 0.3 }}
-                    className="char-count text-rose-400 font-black text-2xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
+                    className={`char-count font-black text-2xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] ${isStellaBattleActive ? 'text-amber-400' : 'text-rose-400'}`}
                   >
-                    {char.totalBouquets.toLocaleString()}
+                    {(isStellaBattleActive ? (char.stellaBattleBouquets || 0) : char.totalBouquets).toLocaleString()}
                   </motion.span>
-                  <span className="char-unit text-rose-400/80 text-xs font-bold">本</span>
+                  <span className={`char-unit text-xs font-bold ${isStellaBattleActive ? 'text-amber-400/80' : 'text-rose-400/80'}`}>
+                    {isStellaBattleActive ? 'STELLA' : '本'}
+                  </span>
                 </div>
               </div>
             </motion.div>

@@ -43,6 +43,22 @@ export default function ThrowBouquetPage() {
     fetchCharacter();
   }, [roomId, characterId, currentUserId]);
 
+  // ステラバトル開始の監視
+  useEffect(() => {
+    const eventSource = new EventSource(`/api/rooms/${roomId}/events`);
+    eventSource.onmessage = (event) => {
+      try {
+        const { type } = JSON.parse(event.data);
+        if (type === 'STELLA_BATTLE_START') {
+          router.push(`/rooms/${roomId}`);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    return () => eventSource.close();
+  }, [roomId, router]);
+
   const { localCount, handleThrow, isLocked } = useBouquetSender(
     roomId,
     characterId,

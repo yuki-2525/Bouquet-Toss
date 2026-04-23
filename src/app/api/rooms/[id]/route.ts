@@ -111,7 +111,8 @@ export async function GET(
         avatarUrl: char.avatar_url,
         ownerId: char.user_id,
         mySentCount: mySentCounts[char.id] || 0,
-        totalBouquets: (isOwner || isShared) ? char.total_bouquets_received : null
+        totalBouquets: (isOwner || isShared) ? char.total_bouquets_received : null,
+        stellaBattleBouquets: char.stella_battle_bouquets || 0
       };
     });
 
@@ -124,6 +125,8 @@ export async function GET(
       allowOwnerManageAll: !!room.allow_owner_manage_all,
       allowOwnerViewStats: room.allow_owner_view_stats !== false, // default true
       overlayToken: isRoomOwner ? room.overlay_token : null,
+      stellaBattleActive: !!room.stella_battle_active,
+      stellaBattleCoefficient: room.stella_battle_coefficient || 1.0,
       characters: formattedCharacters,
       members: formattedMembers
     });

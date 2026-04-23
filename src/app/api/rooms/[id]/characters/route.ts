@@ -55,9 +55,13 @@ export async function POST(
     // 1. 権限チェック（ルーム作成者本人、またはアクセス権を持つユーザーのみ追加可能）
     const { data: room } = await supabase
       .from('rooms')
-      .select('created_by')
+      .select('created_by, stella_battle_active')
       .eq('id', roomId)
       .single();
+
+    if (room?.stella_battle_active) {
+      return NextResponse.json({ error: 'Cannot add characters during Stella Battle' }, { status: 400 });
+    }
 
     if (room?.created_by !== userId) {
       // オーナーでない場合はroom_accessを確認

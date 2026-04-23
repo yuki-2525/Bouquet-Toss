@@ -18,7 +18,7 @@ export async function GET(
   // 1. トークンの検証とルーム情報の取得
   const { data: room, error: roomError } = await supabase
     .from('rooms')
-    .select('id, name, allow_owner_view_stats, overlay_token')
+    .select('id, name, allow_owner_view_stats, overlay_token, stella_battle_active')
     .eq('id', roomId)
     .single();
 
@@ -56,7 +56,9 @@ export async function GET(
       id: c.id,
       name: c.name,
       avatarUrl: c.avatar_url,
-      totalBouquets: c.total_bouquets_received
-    }))
+      totalBouquets: c.total_bouquets_received,
+      stellaBattleBouquets: c.stella_battle_bouquets
+    })),
+    stellaBattleActive: !!room.stella_battle_active
   });
 }
